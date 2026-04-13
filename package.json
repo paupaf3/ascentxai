@@ -1,0 +1,25 @@
+{
+  "name": "ascentxai",
+  "version": "0.0.1",
+  "description": "AscentX.ai is a career-progression intelligence tool built with TypeScript. It analyzes the \"delta\" between your current professional footprint (CV, GitHub, LinkedIn) and your career goals to provide a strategic roadmap for leveling up.",
+  "homepage": "https://github.com/paupaf3/ascentxai#readme",
+  "bugs": {
+    "url": "https://github.com/paupaf3/ascentxai/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paupaf3/ascentxai.git"
+  },
+  "license": "ISC",
+  "author": "Pau Agustí",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": ""
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
+  }
+}
