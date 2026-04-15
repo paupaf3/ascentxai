@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { GraphqlResponseError } from "@octokit/graphql";
 
 // Mock @octokit/graphql before importing the module under test
@@ -24,10 +24,20 @@ import {
 // ---------------------------------------------------------------------------
 
 const mockClient = vi.fn();
+const ORIGINAL_GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
 beforeEach(() => {
     vi.clearAllMocks();
+    process.env.GITHUB_TOKEN = "test-token";
     (graphql.defaults as ReturnType<typeof vi.fn>).mockReturnValue(mockClient);
+});
+
+afterEach(() => {
+    if (ORIGINAL_GITHUB_TOKEN === undefined) {
+        delete process.env.GITHUB_TOKEN;
+    } else {
+        process.env.GITHUB_TOKEN = ORIGINAL_GITHUB_TOKEN;
+    }
 });
 
 // ---------------------------------------------------------------------------
