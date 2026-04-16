@@ -1,4 +1,4 @@
-import type { CandidateProfile } from "../../../../src/types/resume/candidate";
+import type { CandidateProfile } from "../../../../src/types/candidate/profile";
 
 export const fullCandidateFixture: CandidateProfile = {
     fullName: "Ada Lovelace",

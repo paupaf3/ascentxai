@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import {
     candidateProfileSchema,
     roleSchema,
-} from "../../../src/types/resume/candidate";
+} from "../../../src/types/candidate/profile";
 
 const baseProfile = {
     fullName: "Ada Lovelace",

@@ -1,8 +1,8 @@
 import { graphql } from "@octokit/graphql";
 import { GraphqlResponseError } from "@octokit/graphql";
 import {
-    GithubRawProfileResponse,
-    GithubRawSingleRepoResponse,
+    githubRawProfileResponseSchema,
+    githubRawSingleRepoResponseSchema,
 } from "../../types/github/github-response";
 import { PROFILE_AND_PINNED_QUERY, SINGLE_REPO_QUERY } from "./github-queries";
 import { GithubProfile, GithubRepo } from "../../types/github/github";
@@ -36,15 +36,10 @@ function buildClient() {
 export async function fetchProfile(username: string): Promise<GithubProfile> {
     const client = buildClient();
 
-    let response: GithubRawProfileResponse;
+    let raw: unknown;
 
     try {
-        response = await client<GithubRawProfileResponse>(
-            PROFILE_AND_PINNED_QUERY,
-            {
-                username,
-            }
-        );
+        raw = await client(PROFILE_AND_PINNED_QUERY, { username });
     } catch (error) {
         if (error instanceof GraphqlResponseError) {
             throw new Error(
@@ -53,6 +48,8 @@ export async function fetchProfile(username: string): Promise<GithubProfile> {
         }
         throw error;
     }
+
+    const response = githubRawProfileResponseSchema.parse(raw);
 
     if (!response.user) {
         throw new Error(
@@ -86,16 +83,10 @@ export async function fetchRepo(
 ): Promise<GithubRepo> {
     const client = buildClient();
 
-    let response: GithubRawSingleRepoResponse;
+    let raw: unknown;
 
     try {
-        response = await client<GithubRawSingleRepoResponse>(
-            SINGLE_REPO_QUERY,
-            {
-                owner,
-                repo,
-            }
-        );
+        raw = await client(SINGLE_REPO_QUERY, { owner, repo });
     } catch (error) {
         if (error instanceof GraphqlResponseError) {
             throw new Error(
@@ -104,6 +95,8 @@ export async function fetchRepo(
         }
         throw error;
     }
+
+    const response = githubRawSingleRepoResponseSchema.parse(raw);
 
     if (!response.repository) {
         throw new Error(

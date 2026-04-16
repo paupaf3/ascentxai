@@ -2,8 +2,8 @@ import { mastra } from "../../mastra";
 import {
     candidateProfileSchema,
     type CandidateProfile,
-} from "../../types/resume/candidate";
-import { parseResumeFromBuffer, parseResumeFromPath } from "./pdf-parser";
+} from "../../types/candidate/profile";
+import { parsePdfFromBuffer, parsePdfFromPath } from "./pdf-parser";
 
 export interface ExtractionInputFromPath {
     filePath: string;
@@ -37,8 +37,8 @@ export async function extractCandidateProfile(
 
     const resumeText =
         "filePath" in input
-            ? await parseResumeFromPath(input.filePath)
-            : await parseResumeFromBuffer(input.buffer);
+            ? await parsePdfFromPath(input.filePath)
+            : await parsePdfFromBuffer(input.buffer);
 
     const agent = mastra.getAgent("candidateExtractionAgent");
 

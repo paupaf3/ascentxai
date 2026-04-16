@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { fullCandidateFixture } from "./fixtures/candidate.fixture";
+import { fullCandidateFixture } from "./fixtures/profile.fixture";
 
 const { generateMock, getAgentMock } = vi.hoisted(() => {
     const generate = vi.fn();
@@ -14,21 +14,21 @@ vi.mock("../../../src/mastra", () => ({
     mastra: { getAgent: getAgentMock },
 }));
 
-vi.mock("../../../src/modules/resume/pdf-parser", () => ({
-    parseResumeFromPath: vi.fn(),
-    parseResumeFromBuffer: vi.fn(),
+vi.mock("../../../src/modules/candidate/pdf-parser", () => ({
+    parsePdfFromPath: vi.fn(),
+    parsePdfFromBuffer: vi.fn(),
 }));
 
 import {
-    parseResumeFromBuffer,
-    parseResumeFromPath,
-} from "../../../src/modules/resume/pdf-parser";
-import { extractCandidateProfile } from "../../../src/modules/resume/candidate-extractor";
+    parsePdfFromBuffer,
+    parsePdfFromPath,
+} from "../../../src/modules/candidate/pdf-parser";
+import { extractCandidateProfile } from "../../../src/modules/candidate/profile-extractor";
 
-const mockedParsePath = parseResumeFromPath as unknown as ReturnType<
+const mockedParsePath = parsePdfFromPath as unknown as ReturnType<
     typeof vi.fn
 >;
-const mockedParseBuffer = parseResumeFromBuffer as unknown as ReturnType<
+const mockedParseBuffer = parsePdfFromBuffer as unknown as ReturnType<
     typeof vi.fn
 >;
 

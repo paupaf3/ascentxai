@@ -10,20 +10,20 @@ import { extractText, getDocumentProxy } from 'unpdf';
  *
  * @throws when the file cannot be read or parsed.
  */
-export async function parseResumeFromPath(filePath: string): Promise<string> {
+export async function parsePdfFromPath(filePath: string): Promise<string> {
     if (!filePath.toLowerCase().endsWith('.pdf')) {
         throw new Error(`Expected a .pdf file, received: ${filePath}`);
     }
 
     const buffer = await readFile(filePath);
-    return parseResumeFromBuffer(buffer);
+    return parsePdfFromBuffer(buffer);
 }
 
 /**
  * Extracts text from an in-memory PDF buffer. Useful when the resume is
  * uploaded via an HTTP endpoint and never touches disk.
  */
-export async function parseResumeFromBuffer(buffer: Buffer | Uint8Array): Promise<string> {
+export async function parsePdfFromBuffer(buffer: Buffer | Uint8Array): Promise<string> {
     const bytes = Buffer.isBuffer(buffer)
         ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
         : buffer;

@@ -1,6 +1,6 @@
 import { Mastra } from '@mastra/core';
 
-import { candidateExtractionAgent } from './modules/resume/candidate-agent';
+import { candidateExtractionAgent } from './modules/candidate/extraction-agent';
 
 /**
  * Central Mastra instance. Registering agents here enables Mastra's built-in

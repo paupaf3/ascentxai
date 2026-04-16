@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import path from 'node:path';
 
-import { extractCandidateProfile } from '../src/modules/resume/candidate-extractor';
+import { extractCandidateProfile } from '../src/modules/candidate/profile-extractor';
 
 async function main(): Promise<void> {
     const [, , rawPath] = process.argv;
