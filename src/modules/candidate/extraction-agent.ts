@@ -41,6 +41,11 @@ export const candidateExtractionAgent = new Agent({
         '- Compute totalYearsOfExperience as the sum of NON-OVERLAPPING role periods up to today\'s date. If two roles overlap, count the overlap only once. Do not simply add yearsInRole together.',
         '- For each role, populate technologies with the canonical names of languages, frameworks, and tools explicitly mentioned for that role.',
         '',
+        'FREE-TEXT FIELDS (headline, summary, roles[].summary)',
+        '- Use the candidate\'s own words as closely as the extracted text allows.',
+        '- Do not rephrase, embellish, or add information not present in the resume.',
+        '- If the source text is fragmented or garbled due to PDF extraction, reconstruct the most faithful reading you can — but still prefer the candidate\'s vocabulary and sentence structure over your own.',
+        '',
         'SKILLS',
         '- Aggregate all technologies mentioned anywhere in the resume into the skills object, bucketed by category (languages / frameworks / databases / cloudAndInfra / tools / other).',
         '- topSkills is a ranked shortlist of at most five highest-signal skills: weight by frequency across roles, recency, and seniority of the role they appear in.',
@@ -48,5 +53,5 @@ export const candidateExtractionAgent = new Agent({
         'LINKS',
         '- Scan the full document (header, footer, contact block, project descriptions) for GitHub, LinkedIn, and personal-site URLs. A bare GitHub username like "github.com/foo" or "@foo" on a contact line counts.',
     ].join('\n'),
-    model: google(extractionModel),
+    model: google(extractionModel, { temperature: 0 }),
 });

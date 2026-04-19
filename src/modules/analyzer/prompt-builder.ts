@@ -1,11 +1,11 @@
-import type { CandidateProfile, Role } from '../../types/candidate/profile';
-import type { GithubProfile, GithubRepo } from '../../types/github/github';
+import type { CandidateProfile, Role } from "../../types/candidate/profile";
+import type { GithubProfile, GithubRepo } from "../../types/github/github";
 
-const README_EXCERPT_LENGTH = 300;
+const README_EXCERPT_LENGTH = 600;
 
 function formatRole(role: Role): string {
-    const title = role.title ?? 'Unknown title';
-    const company = role.company ?? 'Unknown company';
+    const title = role.title ?? "Unknown title";
+    const company = role.company ?? "Unknown company";
     const duration =
         role.startDate && role.endDate
             ? `${role.startDate} – ${role.endDate}`
@@ -13,74 +13,97 @@ function formatRole(role: Role): string {
               ? `${role.startDate} – present`
               : null;
     const years = role.yearsInRole != null ? `${role.yearsInRole}y` : null;
-    const header = [title, `@ ${company}`, duration, years ? `(${years})` : null]
+    const header = [
+        title,
+        `@ ${company}`,
+        duration,
+        years ? `(${years})` : null,
+    ]
         .filter(Boolean)
-        .join(' ');
+        .join(" ");
 
     const lines = [`- ${header}`];
     if (role.summary) lines.push(`  ${role.summary}`);
     if (role.technologies.length > 0)
-        lines.push(`  Tech: ${role.technologies.join(', ')}`);
+        lines.push(`  Tech: ${role.technologies.join(", ")}`);
 
-    return lines.join('\n');
+    return lines.join("\n");
 }
 
 function formatCandidateProfile(profile: CandidateProfile): string {
     const lines: string[] = [];
 
-    lines.push(`Name: ${profile.fullName ?? 'N/A'}`);
+    lines.push(`Name: ${profile.fullName ?? "N/A"}`);
     if (profile.headline) lines.push(`Headline: ${profile.headline}`);
-    if (profile.mostRecentJobTitle) lines.push(`Most recent title: ${profile.mostRecentJobTitle}`);
+    if (profile.mostRecentJobTitle)
+        lines.push(`Most recent title: ${profile.mostRecentJobTitle}`);
     if (profile.totalYearsOfExperience != null)
         lines.push(`Total experience: ${profile.totalYearsOfExperience} years`);
 
-    lines.push('');
-    lines.push('Top skills: ' + (profile.topSkills.length > 0 ? profile.topSkills.join(', ') : 'N/A'));
+    lines.push("");
+    lines.push(
+        "Top skills: " +
+            (profile.topSkills.length > 0
+                ? profile.topSkills.join(", ")
+                : "N/A")
+    );
 
     const { skills } = profile;
     const skillBlocks: string[] = [];
-    if (skills.languages.length > 0) skillBlocks.push(`Languages: ${skills.languages.join(', ')}`);
-    if (skills.frameworks.length > 0) skillBlocks.push(`Frameworks: ${skills.frameworks.join(', ')}`);
-    if (skills.databases.length > 0) skillBlocks.push(`Databases: ${skills.databases.join(', ')}`);
-    if (skills.cloudAndInfra.length > 0) skillBlocks.push(`Cloud & Infra: ${skills.cloudAndInfra.join(', ')}`);
-    if (skills.tools.length > 0) skillBlocks.push(`Tools: ${skills.tools.join(', ')}`);
-    if (skills.other.length > 0) skillBlocks.push(`Other: ${skills.other.join(', ')}`);
+    if (skills.languages.length > 0)
+        skillBlocks.push(`Languages: ${skills.languages.join(", ")}`);
+    if (skills.frameworks.length > 0)
+        skillBlocks.push(`Frameworks: ${skills.frameworks.join(", ")}`);
+    if (skills.databases.length > 0)
+        skillBlocks.push(`Databases: ${skills.databases.join(", ")}`);
+    if (skills.cloudAndInfra.length > 0)
+        skillBlocks.push(`Cloud & Infra: ${skills.cloudAndInfra.join(", ")}`);
+    if (skills.tools.length > 0)
+        skillBlocks.push(`Tools: ${skills.tools.join(", ")}`);
+    if (skills.other.length > 0)
+        skillBlocks.push(`Other: ${skills.other.join(", ")}`);
     if (skillBlocks.length > 0) lines.push(...skillBlocks);
 
     if (profile.roles.length > 0) {
-        lines.push('');
-        lines.push('Experience (most recent first):');
+        lines.push("");
+        lines.push("Experience (most recent first):");
         lines.push(...profile.roles.map(formatRole));
     }
 
     if (profile.education.length > 0) {
-        lines.push('');
-        lines.push('Education:');
+        lines.push("");
+        lines.push("Education:");
         for (const edu of profile.education) {
-            const degree = [edu.degree, edu.field].filter(Boolean).join(' in ');
-            const years = [edu.startYear, edu.endYear].filter(Boolean).join('–');
-            lines.push(`- ${degree || 'Degree N/A'} @ ${edu.institution ?? 'N/A'}${years ? ` (${years})` : ''}`);
+            const degree = [edu.degree, edu.field].filter(Boolean).join(" in ");
+            const years = [edu.startYear, edu.endYear]
+                .filter(Boolean)
+                .join("–");
+            lines.push(
+                `- ${degree || "Degree N/A"} @ ${edu.institution ?? "N/A"}${years ? ` (${years})` : ""}`
+            );
         }
     }
 
     if (profile.summary) {
-        lines.push('');
+        lines.push("");
         lines.push(`Professional summary: ${profile.summary}`);
     }
 
-    return lines.join('\n');
+    return lines.join("\n");
 }
 
 function formatRepo(repo: GithubRepo): string {
     const lines: string[] = [];
-    const lang = repo.primaryLanguage ? ` [${repo.primaryLanguage}]` : '';
-    lines.push(`- ${repo.name}${lang}: ${repo.description ?? 'No description'}`);
+    const lang = repo.primaryLanguage ? ` [${repo.primaryLanguage}]` : "";
+    lines.push(
+        `- ${repo.name}${lang}: ${repo.description ?? "No description"}`
+    );
     if (repo.readme) {
         const excerpt = repo.readme.slice(0, README_EXCERPT_LENGTH).trim();
-        const truncated = repo.readme.length > README_EXCERPT_LENGTH ? '…' : '';
+        const truncated = repo.readme.length > README_EXCERPT_LENGTH ? "…" : "";
         lines.push(`  README: ${excerpt}${truncated}`);
     }
-    return lines.join('\n');
+    return lines.join("\n");
 }
 
 function formatGithubProfile(portfolio: GithubProfile): string {
@@ -94,21 +117,21 @@ function formatGithubProfile(portfolio: GithubProfile): string {
     lines.push(`Followers: ${portfolio.followers}`);
 
     if (portfolio.pinnedRepos.length > 0) {
-        lines.push('');
-        lines.push('Pinned repositories:');
+        lines.push("");
+        lines.push("Pinned repositories:");
         lines.push(...portfolio.pinnedRepos.map(formatRepo));
     } else {
-        lines.push('');
-        lines.push('No pinned repositories.');
+        lines.push("");
+        lines.push("No pinned repositories.");
     }
 
-    return lines.join('\n');
+    return lines.join("\n");
 }
 
 export function buildPrompt(
     profile: CandidateProfile,
     portfolio: GithubProfile,
-    goal: string,
+    goal: string
 ): string {
     return `You are AscentX Career Architect — an expert career coach and senior engineering mentor. \
 Your role is to give developers a brutally honest, highly actionable career audit based on their \

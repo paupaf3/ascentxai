@@ -14,5 +14,5 @@ const analysisModel =
 export const careerAnalysisAgent = new Agent({
     name: 'career-analysis-agent',
     instructions: 'You are AscentX Career Architect. Follow the instructions in the user message exactly.',
-    model: google(analysisModel),
+    model: google(analysisModel, { temperature: 0 }),
 });
