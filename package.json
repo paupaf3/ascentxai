@@ -1,41 +1,41 @@
 {
-  "name": "ascentxai",
-  "version": "0.0.1",
-  "description": "AscentX.ai is a career-progression intelligence tool built with TypeScript. It analyzes the \"delta\" between your current professional footprint (CV, GitHub, LinkedIn) and your career goals to provide a strategic roadmap for leveling up.",
-  "homepage": "https://github.com/paupaf3/ascentxai#readme",
-  "bugs": {
-    "url": "https://github.com/paupaf3/ascentxai/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/paupaf3/ascentxai.git"
-  },
-  "license": "ISC",
-  "author": "Pau Agustí",
-  "type": "commonjs",
-  "main": "index.js",
-  "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "github:test": "tsx scripts/github-test.ts",
-    "resume:extract": "tsx scripts/extract-resume.ts",
-    "analyze": "tsx scripts/analyze.ts"
-  },
-  "devDependencies": {
-    "@types/node": "^25.6.0",
-    "@vitest/coverage-v8": "^4.1.4",
-    "prettier": "^3.8.2",
-    "ts-node": "^10.9.2",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.4"
-  },
-  "dependencies": {
-    "@ai-sdk/google": "^1.0.0",
-    "@mastra/core": "^0.10.0",
-    "@octokit/graphql": "^9.0.3",
-    "dotenv": "^17.4.2",
-    "unpdf": "^0.12.0",
-    "zod": "^3.23.8"
-  }
+    "name": "ascentxai",
+    "version": "0.0.1",
+    "description": "AscentX.ai is a career-progression intelligence tool built with TypeScript. It analyzes the \"delta\" between your current professional footprint (CV, GitHub, LinkedIn) and your career goals to provide a strategic roadmap for leveling up.",
+    "homepage": "https://github.com/paupaf3/ascentxai#readme",
+    "bugs": {
+        "url": "https://github.com/paupaf3/ascentxai/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/paupaf3/ascentxai.git"
+    },
+    "license": "ISC",
+    "author": "Pau Agustí",
+    "type": "commonjs",
+    "main": "index.js",
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
+        "github:test": "npx tsx scripts/github-test.ts",
+        "resume:extract": "npx tsx scripts/extract-resume.ts",
+        "analyze": "npx tsx scripts/analyze.ts"
+    },
+    "devDependencies": {
+        "@types/node": "^25.6.0",
+        "@vitest/coverage-v8": "^4.1.4",
+        "prettier": "^3.8.2",
+        "ts-node": "^10.9.2",
+        "typescript": "^6.0.2",
+        "vitest": "^4.1.4"
+    },
+    "dependencies": {
+        "@ai-sdk/google": "^1.0.0",
+        "@mastra/core": "^0.10.0",
+        "@octokit/graphql": "^9.0.3",
+        "dotenv": "^17.4.2",
+        "unpdf": "^0.12.0",
+        "zod": "^3.23.8"
+    }
 }
