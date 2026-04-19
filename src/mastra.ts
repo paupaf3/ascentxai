@@ -1,6 +1,7 @@
 import { Mastra } from '@mastra/core';
 
 import { candidateExtractionAgent } from './modules/candidate/extraction-agent';
+import { careerAnalysisAgent } from './modules/analyzer/analysis-agent';
 
 /**
  * Central Mastra instance. Registering agents here enables Mastra's built-in
@@ -10,5 +11,6 @@ import { candidateExtractionAgent } from './modules/candidate/extraction-agent';
 export const mastra = new Mastra({
     agents: {
         candidateExtractionAgent,
+        careerAnalysisAgent,
     },
 });
