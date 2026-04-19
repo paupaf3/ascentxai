@@ -42,11 +42,14 @@ export async function extractCandidateProfile(
 
     const agent = mastra.getAgent("candidateExtractionAgent");
 
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
     const result = await agent.generate(
         [
             {
                 role: "user",
                 content: [
+                    `Today's date is ${today}. Use this as the reference date for all date calculations and for determining whether a role is current.`,
                     "Extract the candidate profile from the resume text below.",
                     "Return strict JSON that matches the provided schema.",
                     "---BEGIN RESUME---",
