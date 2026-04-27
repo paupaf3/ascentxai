@@ -1,5 +1,6 @@
 import type { CandidateProfile, Role } from "../../types/candidate/profile";
 import type { GithubProfile, GithubRepo } from "../../types/github/github";
+import type { LinkedInProfile } from "../../types/linkedin/linkedin-profile";
 
 const README_EXCERPT_LENGTH = 600;
 
@@ -128,30 +129,104 @@ function formatGithubProfile(portfolio: GithubProfile): string {
     return lines.join("\n");
 }
 
+export function formatLinkedInProfile(profile: LinkedInProfile): string {
+    const lines: string[] = [];
+
+    if (profile.connections != null)
+        lines.push(`Connections: ${profile.connections}+`);
+
+    if (profile.endorsedSkills.length > 0) {
+        lines.push("");
+        lines.push("Endorsed skills (with peer endorsement counts):");
+        for (const skill of profile.endorsedSkills) {
+            const count =
+                skill.endorsements != null
+                    ? ` — ${skill.endorsements} endorsements`
+                    : "";
+            lines.push(`  ${skill.name}${count}`);
+        }
+    }
+
+    if (profile.recommendations.length > 0) {
+        lines.push("");
+        lines.push("Recommendations received:");
+        for (const rec of profile.recommendations) {
+            const from = rec.recommenderTitle
+                ? `${rec.recommenderName} (${rec.recommenderTitle})`
+                : rec.recommenderName;
+            lines.push(`  From ${from}: "${rec.text}"`);
+        }
+    }
+
+    if (profile.courses.length > 0) {
+        lines.push("");
+        lines.push("Courses:");
+        for (const course of profile.courses) {
+            const assoc = course.associatedWith
+                ? ` — ${course.associatedWith}`
+                : "";
+            lines.push(`  ${course.name}${assoc}`);
+        }
+    }
+
+    if (profile.volunteerExperience.length > 0) {
+        lines.push("");
+        lines.push("Volunteer experience:");
+        for (const v of profile.volunteerExperience) {
+            lines.push(`  ${v.title ?? "N/A"} @ ${v.organization ?? "N/A"}`);
+        }
+    }
+
+    return lines.join("\n");
+}
+
 export function buildPrompt(
     profile: CandidateProfile,
     portfolio: GithubProfile,
-    goal: string
+    goal: string,
+    linkedinProfile: LinkedInProfile | null = null,
 ): string {
+    const hasLinkedIn = linkedinProfile !== null;
+
+    const dataSourcesList = [
+        "1. A structured candidate profile extracted from their resume",
+        "2. Their public GitHub portfolio (pinned repositories)",
+        hasLinkedIn
+            ? "3. Their LinkedIn profile (peer endorsements, recommendations, courses)"
+            : null,
+        `${hasLinkedIn ? "4" : "3"}. Their stated career goal`,
+    ]
+        .filter(Boolean)
+        .join("\n");
+
+    const linkedInInstructions = hasLinkedIn
+        ? `\nWhen LinkedIn data is present, use endorsement counts to corroborate or question skill claims \
+from the resume. If a skill appears in the resume's topSkills but has zero or very few LinkedIn \
+endorsements, flag the discrepancy. If recommendations are present, treat them as qualitative \
+evidence of real-world impact.\n`
+        : "";
+
+    const linkedInSection = hasLinkedIn
+        ? `\n=== LINKEDIN PROFILE ===\n${formatLinkedInProfile(linkedinProfile!)}\n`
+        : "";
+
     return `You are AscentX Career Architect — an expert career coach and senior engineering mentor. \
 Your role is to give developers a brutally honest, highly actionable career audit based on their \
 resume, GitHub portfolio, and stated career goal.
 
-You have access to three data sources:
-1. A structured candidate profile extracted from their resume
-2. Their public GitHub portfolio (pinned repositories)
-3. Their stated career goal
+You have access to the following data sources:
+${dataSourcesList}
 
 Your analysis must be evidence-based: cite specific skills, roles, technologies, or repositories \
-when making claims. Do not invent information. If something is absent from both sources, call it out \
+when making claims. Do not invent information. If something is absent from all sources, call it out \
 as a gap.
-
+${linkedInInstructions}
 === CANDIDATE PROFILE ===
 ${formatCandidateProfile(profile)}
 
 === GITHUB PORTFOLIO ===
 ${formatGithubProfile(portfolio)}
-
+${linkedInSection}
 === CAREER GOAL ===
 ${goal}
 

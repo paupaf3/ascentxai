@@ -1,26 +1,35 @@
 import { mastra } from '../../mastra';
+import type { LinkedInProfile } from '../../types/linkedin/linkedin-profile';
 import { extractCandidateProfile } from '../candidate/profile-extractor';
 import { fetchProfile } from '../github/github-client';
+import { extractLinkedInProfile } from '../linkedin/profile-extractor';
 import { buildPrompt } from './prompt-builder';
 
 /**
  * End-to-end career analysis orchestrator.
  *
- * Chains the four independent modules in sequence and returns the raw
- * AI-generated analysis string. No formatting or rendering logic lives here —
- * that is delegated to `formatter.ts`.
+ * Chains independent modules in parallel and returns the raw AI-generated
+ * analysis string. LinkedIn is optional: when a path is supplied it is
+ * extracted alongside the resume and GitHub; when omitted the analysis
+ * falls back to two data sources.
  */
 export async function analyze(
     resumePath: string,
     githubUsername: string,
     goal: string,
+    linkedinPath?: string,
 ): Promise<string> {
-    const [profile, portfolio] = await Promise.all([
+    const linkedinPromise: Promise<LinkedInProfile | null> = linkedinPath
+        ? extractLinkedInProfile({ filePath: linkedinPath })
+        : Promise.resolve(null);
+
+    const [profile, portfolio, linkedinProfile] = await Promise.all([
         extractCandidateProfile({ filePath: resumePath }),
         fetchProfile(githubUsername),
+        linkedinPromise,
     ]);
 
-    const prompt = buildPrompt(profile, portfolio, goal);
+    const prompt = buildPrompt(profile, portfolio, goal, linkedinProfile);
 
     const agent = mastra.getAgent('careerAnalysisAgent');
     const result = await agent.generate([{ role: 'user', content: prompt }]);
