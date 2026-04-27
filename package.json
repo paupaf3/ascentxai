@@ -20,7 +20,8 @@
         "test:coverage": "vitest run --coverage",
         "github:test": "npx tsx scripts/github-test.ts",
         "resume:extract": "npx tsx scripts/extract-resume.ts",
-        "analyze": "npx tsx scripts/analyze.ts"
+        "analyze": "npx tsx scripts/analyze.ts",
+        "linkedin:extract": "npx tsx scripts/extract-linkedin.ts"
     },
     "devDependencies": {
         "@types/node": "^25.6.0",
