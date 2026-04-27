@@ -184,7 +184,7 @@ export function buildPrompt(
     profile: CandidateProfile,
     portfolio: GithubProfile,
     goal: string,
-    linkedinProfile: LinkedInProfile | null = null,
+    linkedinProfile: LinkedInProfile | null = null
 ): string {
     const hasLinkedIn = linkedinProfile !== null;
 

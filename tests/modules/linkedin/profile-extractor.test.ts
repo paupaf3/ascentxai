@@ -26,7 +26,9 @@ import {
 import { extractLinkedInProfile } from "../../../src/modules/linkedin/profile-extractor";
 
 const mockedParsePath = parsePdfFromPath as unknown as ReturnType<typeof vi.fn>;
-const mockedParseBuffer = parsePdfFromBuffer as unknown as ReturnType<typeof vi.fn>;
+const mockedParseBuffer = parsePdfFromBuffer as unknown as ReturnType<
+    typeof vi.fn
+>;
 
 const ORIGINAL_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 

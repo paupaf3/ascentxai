@@ -25,9 +25,7 @@ import {
 } from "../../../src/modules/candidate/pdf-parser";
 import { extractCandidateProfile } from "../../../src/modules/candidate/profile-extractor";
 
-const mockedParsePath = parsePdfFromPath as unknown as ReturnType<
-    typeof vi.fn
->;
+const mockedParsePath = parsePdfFromPath as unknown as ReturnType<typeof vi.fn>;
 const mockedParseBuffer = parsePdfFromBuffer as unknown as ReturnType<
     typeof vi.fn
 >;

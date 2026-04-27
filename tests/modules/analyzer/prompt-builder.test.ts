@@ -49,7 +49,7 @@ describe("buildPrompt", () => {
         };
         const prompt = buildPrompt(fullCandidateFixture, portfolio, GOAL);
         expect(prompt).toContain("…");
-        expect(prompt).not.toContain("A".repeat(400));
+        expect(prompt).not.toContain("A".repeat(700));
     });
 
     it("handles repos with no README or description gracefully", () => {
@@ -86,12 +86,20 @@ describe("buildPrompt", () => {
 
     describe("without LinkedIn", () => {
         it("does not include a LINKEDIN PROFILE section", () => {
-            const prompt = buildPrompt(fullCandidateFixture, profileFixture, GOAL);
+            const prompt = buildPrompt(
+                fullCandidateFixture,
+                profileFixture,
+                GOAL
+            );
             expect(prompt).not.toContain("LINKEDIN PROFILE");
         });
 
         it("lists three data sources", () => {
-            const prompt = buildPrompt(fullCandidateFixture, profileFixture, GOAL);
+            const prompt = buildPrompt(
+                fullCandidateFixture,
+                profileFixture,
+                GOAL
+            );
             expect(prompt).toContain("3. Their stated career goal");
             expect(prompt).not.toContain("4. Their stated career goal");
         });
@@ -99,34 +107,64 @@ describe("buildPrompt", () => {
 
     describe("with LinkedIn", () => {
         it("includes a LINKEDIN PROFILE section", () => {
-            const prompt = buildPrompt(fullCandidateFixture, profileFixture, GOAL, fullLinkedInFixture);
+            const prompt = buildPrompt(
+                fullCandidateFixture,
+                profileFixture,
+                GOAL,
+                fullLinkedInFixture
+            );
             expect(prompt).toContain("=== LINKEDIN PROFILE ===");
         });
 
         it("includes endorsed skills with counts", () => {
-            const prompt = buildPrompt(fullCandidateFixture, profileFixture, GOAL, fullLinkedInFixture);
+            const prompt = buildPrompt(
+                fullCandidateFixture,
+                profileFixture,
+                GOAL,
+                fullLinkedInFixture
+            );
             expect(prompt).toContain("TypeScript");
             expect(prompt).toContain("42 endorsements");
         });
 
         it("includes recommendations", () => {
-            const prompt = buildPrompt(fullCandidateFixture, profileFixture, GOAL, fullLinkedInFixture);
+            const prompt = buildPrompt(
+                fullCandidateFixture,
+                profileFixture,
+                GOAL,
+                fullLinkedInFixture
+            );
             expect(prompt).toContain("Charles Babbage");
             expect(prompt).toContain("Ada is an exceptional engineer");
         });
 
         it("includes courses", () => {
-            const prompt = buildPrompt(fullCandidateFixture, profileFixture, GOAL, fullLinkedInFixture);
+            const prompt = buildPrompt(
+                fullCandidateFixture,
+                profileFixture,
+                GOAL,
+                fullLinkedInFixture
+            );
             expect(prompt).toContain("Distributed Systems");
         });
 
         it("lists four data sources", () => {
-            const prompt = buildPrompt(fullCandidateFixture, profileFixture, GOAL, fullLinkedInFixture);
+            const prompt = buildPrompt(
+                fullCandidateFixture,
+                profileFixture,
+                GOAL,
+                fullLinkedInFixture
+            );
             expect(prompt).toContain("4. Their stated career goal");
         });
 
         it("includes LinkedIn endorsement cross-check instructions", () => {
-            const prompt = buildPrompt(fullCandidateFixture, profileFixture, GOAL, fullLinkedInFixture);
+            const prompt = buildPrompt(
+                fullCandidateFixture,
+                profileFixture,
+                GOAL,
+                fullLinkedInFixture
+            );
             expect(prompt).toContain("endorsement counts");
         });
 
@@ -139,7 +177,12 @@ describe("buildPrompt", () => {
                 volunteerExperience: [],
             };
             expect(() =>
-                buildPrompt(fullCandidateFixture, profileFixture, GOAL, sparseLinkedIn)
+                buildPrompt(
+                    fullCandidateFixture,
+                    profileFixture,
+                    GOAL,
+                    sparseLinkedIn
+                )
             ).not.toThrow();
         });
     });

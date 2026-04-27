@@ -34,7 +34,7 @@ describe("parsePdfFromBuffer", () => {
         expect(text).toBe("Hello world");
         expect(mockedExtract).toHaveBeenCalledWith(
             expect.anything(),
-            expect.objectContaining({ mergePages: true }),
+            expect.objectContaining({ mergePages: true })
         );
     });
 
@@ -47,7 +47,7 @@ describe("parsePdfFromBuffer", () => {
         expect(text).toBe("Page 1\nPage 2");
         expect(mockedGetDoc).toHaveBeenCalledWith(
             expect.any(Uint8Array),
-            expect.objectContaining({ verbosity: 0 }),
+            expect.objectContaining({ verbosity: 0 })
         );
         expect(mockedGetDoc).not.toHaveBeenCalledWith(input);
     });
@@ -56,7 +56,7 @@ describe("parsePdfFromBuffer", () => {
         mockedExtract.mockResolvedValueOnce({ text: "   " });
 
         await expect(parsePdfFromBuffer(Buffer.from("pdf"))).rejects.toThrow(
-            /no extractable text/i,
+            /no extractable text/i
         );
     });
 });
@@ -64,7 +64,7 @@ describe("parsePdfFromBuffer", () => {
 describe("parsePdfFromPath", () => {
     it("rejects non-.pdf files without touching the filesystem", async () => {
         await expect(parsePdfFromPath("resume.docx")).rejects.toThrow(
-            /Expected a \.pdf file/,
+            /Expected a \.pdf file/
         );
         expect(mockedReadFile).not.toHaveBeenCalled();
     });

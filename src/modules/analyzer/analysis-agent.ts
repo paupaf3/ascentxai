@@ -1,7 +1,7 @@
-import { google } from '@ai-sdk/google';
-import { Agent } from '@mastra/core/agent';
+import { google } from "@ai-sdk/google";
+import { Agent } from "@mastra/core/agent";
 
-const DEFAULT_ANALYSIS_MODEL = 'gemini-2.5-flash';
+const DEFAULT_ANALYSIS_MODEL = "gemini-2.5-flash";
 const analysisModel =
     process.env.GOOGLE_GENERATIVE_AI_MODEL?.trim() || DEFAULT_ANALYSIS_MODEL;
 
@@ -12,7 +12,8 @@ const analysisModel =
  * message, so the agent itself carries no domain-specific instructions.
  */
 export const careerAnalysisAgent = new Agent({
-    name: 'career-analysis-agent',
-    instructions: 'You are AscentX Career Architect. Follow the instructions in the user message exactly.',
+    name: "career-analysis-agent",
+    instructions:
+        "You are AscentX Career Architect. Follow the instructions in the user message exactly.",
     model: google(analysisModel, { temperature: 0 }),
 });
