@@ -252,5 +252,5 @@ demonstrate readiness for the goal. Specify:
 - The core tech stack to use
 - One measurable milestone that signals the project is "done enough" to put on a resume
 
-Keep the entire response under 600 words.`;
+Keep the entire response under 1000 words.`;
 }
