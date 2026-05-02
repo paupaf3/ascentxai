@@ -15,8 +15,9 @@ vi.mock("@octokit/graphql", async (importOriginal) => {
 import { graphql } from "@octokit/graphql";
 import {
     fetchProfile,
-    fetchRepoBySlug,
     fetchRepo,
+    fetchRepoBySlug,
+    fetchTopRepositories,
 } from "../../../src/modules/github/github-client";
 
 // ---------------------------------------------------------------------------
@@ -246,6 +247,96 @@ describe("fetchRepoBySlug", () => {
     it("throws on a slug with too many segments", async () => {
         await expect(fetchRepoBySlug("owner/repo/extra")).rejects.toThrow(
             "Invalid repository slug"
+        );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// fetchTopRepositories
+// ---------------------------------------------------------------------------
+
+describe("fetchTopRepositories", () => {
+    it("returns a mapped array of repos ordered by stars", async () => {
+        mockClient.mockResolvedValueOnce({
+            user: {
+                repositories: {
+                    nodes: [
+                        {
+                            name: "popular-repo",
+                            description: "Most starred",
+                            url: "https://github.com/testuser/popular-repo",
+                            primaryLanguage: { name: "TypeScript" },
+                            object: { text: "# Popular" },
+                        },
+                        {
+                            name: "other-repo",
+                            description: "Less starred",
+                            url: "https://github.com/testuser/other-repo",
+                            primaryLanguage: { name: "Python" },
+                            object: null,
+                        },
+                    ],
+                },
+            },
+        });
+
+        const repos = await fetchTopRepositories("testuser");
+
+        expect(repos).toHaveLength(2);
+        expect(repos[0]?.name).toBe("popular-repo");
+        expect(repos[0]?.primaryLanguage).toBe("TypeScript");
+        expect(repos[0]?.readme).toBe("# Popular");
+        expect(repos[1]?.readme).toBeNull();
+    });
+
+    it("forwards the limit parameter to the GraphQL query", async () => {
+        mockClient.mockResolvedValueOnce({
+            user: { repositories: { nodes: [] } },
+        });
+
+        await fetchTopRepositories("testuser", 5);
+
+        expect(mockClient).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({ username: "testuser", limit: 5 })
+        );
+    });
+
+    it("defaults to limit 10 when no limit is provided", async () => {
+        mockClient.mockResolvedValueOnce({
+            user: { repositories: { nodes: [] } },
+        });
+
+        await fetchTopRepositories("testuser");
+
+        expect(mockClient).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({ limit: 10 })
+        );
+    });
+
+    it("throws when user is not found", async () => {
+        mockClient.mockResolvedValueOnce({ user: null });
+
+        await expect(fetchTopRepositories("nonexistentuser")).rejects.toThrow(
+            'GitHub user "nonexistentuser" not found'
+        );
+    });
+
+    it("throws a descriptive error on GraphQL API failure", async () => {
+        mockClient.mockRejectedValueOnce(
+            new GraphqlResponseError(
+                { method: "POST", url: "https://api.github.com/graphql" },
+                {},
+                {
+                    data: null,
+                    errors: [{ message: "rate limit exceeded" }] as any,
+                }
+            )
+        );
+
+        await expect(fetchTopRepositories("testuser")).rejects.toThrow(
+            'GitHub API error fetching repos for "testuser"'
         );
     });
 });
