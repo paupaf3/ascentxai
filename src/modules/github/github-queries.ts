@@ -51,3 +51,30 @@ export const SINGLE_REPO_QUERY = `
     }
   }
 `;
+
+export const TOP_REPOS_QUERY = `
+  query TopRepos($username: String!, $limit: Int!) {
+    user(login: $username) {
+      repositories(
+        first: $limit,
+        orderBy: { field: STARGAZERS, direction: DESC },
+        privacy: PUBLIC,
+        isFork: false
+      ) {
+        nodes {
+          name
+          description
+          url
+          primaryLanguage {
+            name
+          }
+          object(expression: "HEAD:README.md") {
+            ... on Blob {
+              text
+            }
+          }
+        }
+      }
+    }
+  }
+`;

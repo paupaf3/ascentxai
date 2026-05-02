@@ -3,8 +3,13 @@ import { GraphqlResponseError } from "@octokit/graphql";
 import {
     githubRawProfileResponseSchema,
     githubRawSingleRepoResponseSchema,
+    githubRawTopReposResponseSchema,
 } from "../../types/github/github-response";
-import { PROFILE_AND_PINNED_QUERY, SINGLE_REPO_QUERY } from "./github-queries";
+import {
+    PROFILE_AND_PINNED_QUERY,
+    SINGLE_REPO_QUERY,
+    TOP_REPOS_QUERY,
+} from "./github-queries";
 import { GithubProfile, GithubRepo } from "../../types/github/github";
 import { mapRepo } from "./github-mapper";
 
@@ -119,4 +124,39 @@ export async function fetchRepoBySlug(slug: string): Promise<GithubRepo> {
         );
     }
     return fetchRepo(parts[0], parts[1]);
+}
+
+/**
+ * Fetches the top public, non-forked repositories for a given username,
+ * ordered by star count descending. Used by the analysis agent tool when the
+ * pinned repos alone do not provide enough signal about the candidate's work.
+ */
+export async function fetchTopRepositories(
+    username: string,
+    limit: number = 10
+): Promise<GithubRepo[]> {
+    const client = buildClient();
+
+    let raw: unknown;
+
+    try {
+        raw = await client(TOP_REPOS_QUERY, { username, limit });
+    } catch (error) {
+        if (error instanceof GraphqlResponseError) {
+            throw new Error(
+                `GitHub API error fetching repos for "${username}": ${error.message}`
+            );
+        }
+        throw error;
+    }
+
+    const response = githubRawTopReposResponseSchema.parse(raw);
+
+    if (!response.user) {
+        throw new Error(
+            `GitHub user "${username}" not found. Check the username and try again.`
+        );
+    }
+
+    return response.user.repositories.nodes.map(mapRepo);
 }

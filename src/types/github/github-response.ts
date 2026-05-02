@@ -34,10 +34,23 @@ export const githubRawSingleRepoResponseSchema = z.object({
     repository: githubRawRepoSchema.nullable(),
 });
 
+export const githubRawTopReposResponseSchema = z.object({
+    user: z
+        .object({
+            repositories: z.object({
+                nodes: z.array(githubRawRepoSchema),
+            }),
+        })
+        .nullable(),
+});
+
 export type GithubRawRepo = z.infer<typeof githubRawRepoSchema>;
 export type GithubRawProfileResponse = z.infer<
     typeof githubRawProfileResponseSchema
 >;
 export type GithubRawSingleRepoResponse = z.infer<
     typeof githubRawSingleRepoResponseSchema
+>;
+export type GithubRawTopReposResponse = z.infer<
+    typeof githubRawTopReposResponseSchema
 >;
