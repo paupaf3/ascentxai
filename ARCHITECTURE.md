@@ -50,6 +50,7 @@ ascentxai/
 │   │   │   ├── extraction-agent.ts       # Mastra agent tuned for LinkedIn PDF layout
 │   │   │   └── profile-extractor.ts      # Service: PDF -> validated LinkedInProfile
 │   │   └── analyzer/
+│   │       ├── tools.ts                  # Agent tools: fetch_github_repo, fetch_top_github_repos
 │   │       ├── prompt-builder.ts         # Structured prompt assembly (3 or 4 data sources)
 │   │       └── career-analyzer.ts        # End-to-end orchestrator
 │   ├── types/
@@ -84,7 +85,8 @@ ascentxai/
 │       │   └── profile-extractor.test.ts
 │       └── analyzer/
 │           ├── career-analyzer.test.ts
-│           └── prompt-builder.test.ts
+│           ├── prompt-builder.test.ts
+│           └── tools.test.ts
 ├── .env                                  # GOOGLE_GENERATIVE_AI_API_KEY, GITHUB_TOKEN
 ├── package.json
 ├── tsconfig.json
@@ -110,6 +112,7 @@ ascentxai/
 | `linkedin/profile-extractor.ts`     | ✅ Complete |
 | `types/linkedin/linkedin-profile.ts`| ✅ Complete |
 | `mastra.ts`                         | ✅ Complete |
+| `analyzer/tools.ts`                 | ✅ Complete |
 | `analyzer/prompt-builder.ts`        | ✅ Complete |
 | `analyzer/career-analyzer.ts`       | ✅ Complete |
 | `output/formatter.ts`               | ⬜ Planned  |
@@ -327,16 +330,37 @@ async function extractLinkedInProfile(
 
 ---
 
-### `src/mastra.ts` and extraction agents
+### `src/modules/analyzer/tools.ts`
 
-**Responsibility:** LLM integration for structured extraction.
+**Responsibility:** Defines the two optional tools available to the analysis
+agent. Tools are read-only and reuse the existing GitHub client functions —
+no new networking logic lives here.
+
+**`fetch_github_repo`** — fetches full details and README for a single
+repository by `owner/repo` slug. The agent calls this when the resume or
+LinkedIn mentions a project not among the pinned repos already in the context.
+
+**`fetch_top_github_repos`** — fetches the candidate's top public, non-forked
+repositories ordered by stars (max 20). The agent calls this when pinned repos
+feel unrepresentative — e.g. a senior engineer with very few pins, or pins in
+languages unrelated to claimed skills.
+
+Both tools wrap `fetchRepoBySlug` and `fetchTopRepositories` from
+`github-client.ts` and carry Zod `inputSchema` / `outputSchema` so Mastra
+validates arguments and return values at runtime.
+
+---
+
+### `src/mastra.ts` and agents
+
+**Responsibility:** LLM integration for structured extraction and analysis.
 
 - `src/mastra.ts` exports the central `Mastra` instance and registers all
   agents — it is the single lookup point for the rest of the app.
 - `candidateExtractionAgent` — extracts `CandidateProfile` from resume text.
 - `linkedinExtractionAgent` — extracts `LinkedInProfile` from LinkedIn PDF text.
-- `careerAnalysisAgent` — produces the free-text career analysis from the
-  assembled prompt.
+- `careerAnalysisAgent` — produces the free-text career analysis; carries the
+  two GitHub tools for optional mid-reasoning enrichment.
 
 **Provider swap:** to use a different model, change the `model:` binding on
 the agent (`openai(...)`, `anthropic(...)`, etc.) — no factory needed.
@@ -522,6 +546,8 @@ CandidateProfile | LinkedInProfile (structured JSON)
 | `src/modules/candidate/pdf-parser.ts`          | Shared PDF → text adapter (path or buffer)  |
 | `src/modules/candidate/extraction-agent.ts`    | Mastra agent for resume extraction          |
 | `src/modules/linkedin/extraction-agent.ts`     | Mastra agent for LinkedIn PDF extraction    |
+| `src/modules/analyzer/tools.ts`                | Agent tools wrapping GitHub client functions |
+| `src/modules/analyzer/analysis-agent.ts`       | Analysis agent with optional GitHub tools   |
 | `src/mastra.ts`                                | Central `Mastra` instance registration      |
 | `src/modules/candidate/profile-extractor.ts`   | Public service: resume PDF → validated JSON |
 | `src/modules/linkedin/profile-extractor.ts`    | Public service: LinkedIn PDF → validated JSON |
