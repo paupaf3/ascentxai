@@ -18,7 +18,6 @@ and LinkedIn input, GitHub API data retrieval, and Gemini as the initial AI prov
 | ------------------- | --------------------------------- |
 | Language            | TypeScript                        |
 | Runtime             | Node.js + tsx                     |
-| CLI parsing         | commander                         |
 | PDF extraction      | unpdf                             |
 | GitHub data         | @octokit/graphql                  |
 | Agent orchestration | @mastra/core                      |
@@ -35,7 +34,8 @@ and LinkedIn input, GitHub API data retrieval, and Gemini as the initial AI prov
 ascentxai/
 ├── src/
 │   ├── cli/
-│   │   └── index.ts                  # Entry point, argument parsing, interactive fallback
+│   │   └── index.ts                  # Entry point, argument parsing, interactive fallback (planned)
+│   ├── logger.ts                     # Structured run logger (JSON to disk)
 │   ├── mastra.ts                     # Central Mastra instance (agent registry)
 │   ├── modules/
 │   │   ├── candidate/
@@ -46,19 +46,26 @@ ascentxai/
 │   │   │   ├── github-client.ts          # GitHub GraphQL API client
 │   │   │   ├── github-queries.ts         # GraphQL query strings
 │   │   │   └── github-mapper.ts          # Raw response -> GithubRepo mapper
+│   │   ├── job/
+│   │   │   ├── extraction-agent.ts       # Mastra agent for job posting parsing
+│   │   │   ├── job-extractor.ts          # Fetches/parses job URL or inline text -> agent
+│   │   │   └── matcher.ts               # Algorithmic skill matching & scoring
 │   │   ├── linkedin/
 │   │   │   ├── extraction-agent.ts       # Mastra agent tuned for LinkedIn PDF layout
 │   │   │   └── profile-extractor.ts      # Service: PDF -> validated LinkedInProfile
 │   │   └── analyzer/
 │   │       ├── tools.ts                  # Agent tools: fetch_github_repo, fetch_top_github_repos
-│   │       ├── prompt-builder.ts         # Structured prompt assembly (3 or 4 data sources)
+│   │       ├── prompt-builder.ts         # Structured prompt assembly (goal + job modes)
 │   │       └── career-analyzer.ts        # End-to-end orchestrator
 │   ├── types/
+│   │   ├── analysis-target.ts            # Discriminated union: goal | job mode
+│   │   ├── candidate/
+│   │   │   └── profile.ts                # CandidateProfile Zod schema + inferred type
 │   │   ├── github/
 │   │   │   ├── github.ts                 # Public GithubProfile + GithubRepo Zod schemas
 │   │   │   └── github-response.ts        # Raw GraphQL response validation schemas
-│   │   ├── candidate/
-│   │   │   └── profile.ts                # CandidateProfile Zod schema + inferred type
+│   │   ├── job/
+│   │   │   └── job-description.ts        # JobDescription + MatchResult Zod schemas
 │   │   └── linkedin/
 │   │       └── linkedin-profile.ts       # LinkedInProfile Zod schema + inferred type
 │   └── output/
@@ -67,8 +74,10 @@ ascentxai/
 │   ├── github-test.ts                    # Manual GitHub client harness
 │   ├── extract-resume.ts                 # Manual resume extraction harness
 │   ├── extract-linkedin.ts               # Manual LinkedIn extraction harness
-│   └── analyze.ts                        # Manual end-to-end analysis harness
+│   └── analyze.ts                        # Manual end-to-end analysis harness (goal + job modes)
 ├── tests/
+│   ├── cli/                              # (empty, planned)
+│   ├── output/                           # (empty, planned)
 │   └── modules/
 │       ├── candidate/
 │       │   ├── fixtures/profile.fixture.ts
@@ -111,6 +120,12 @@ ascentxai/
 | `linkedin/extraction-agent.ts`      | ✅ Complete |
 | `linkedin/profile-extractor.ts`     | ✅ Complete |
 | `types/linkedin/linkedin-profile.ts`| ✅ Complete |
+| `job/extraction-agent.ts`           | ✅ Complete |
+| `job/job-extractor.ts`              | ✅ Complete |
+| `job/matcher.ts`                    | ✅ Complete |
+| `types/job/job-description.ts`      | ✅ Complete |
+| `types/analysis-target.ts`          | ✅ Complete |
+| `logger.ts`                         | ✅ Complete |
 | `mastra.ts`                         | ✅ Complete |
 | `analyzer/tools.ts`                 | ✅ Complete |
 | `analyzer/prompt-builder.ts`        | ✅ Complete |
@@ -124,47 +139,61 @@ ascentxai/
 
 ```mermaid
 flowchart TD
-    A([CLI args / interactive stdin]) --> B[cli/index.ts]
-
-    B --> C[career-analyzer.ts\nOrchestrator]
+    A([CLI args]) --> B[scripts/analyze.ts]
+    B --> T[AnalysisTarget\ndiscriminated union]
+    T --> C[career-analyzer.ts\nOrchestrator + RunLogger]
 
     C --> D[profile-extractor.ts\ncandidate]
     C --> E[github-client.ts]
     C --> F[profile-extractor.ts\nlinkedin — optional]
+    C --> J1[job-extractor.ts\n— optional]
 
     D --> G[pdf-parser.ts\nunpdf]
     D --> H[extraction-agent.ts\nMastra + Gemini 2.5 Flash]
 
     G --> I([raw text: string])
     I --> H
-    H --> J([CandidateProfile: JSON])
+    H --> P1([CandidateProfile: JSON])
 
-    E --> K([GithubProfile: JSON])
+    E --> P2([GithubProfile: JSON])
 
     F --> G
     F --> L[extraction-agent.ts\nlinkedin]
-    L --> M([LinkedInProfile: JSON])
+    L --> P3([LinkedInProfile: JSON])
 
-    J --> N[prompt-builder.ts]
-    K --> N
-    M --> N
+    J1 --> J2[extraction-agent.ts\njob]
+    J1 --> J3{fetches URL\nor uses inline text}
+    J2 --> J4([JobDescription: JSON])
+
+    P1 --> M[matcher.ts\ncomputeMatch]
+    P2 --> M
+    J4 --> M
+    M --> J5([MatchResult])
+
+    P1 --> N[prompt-builder.ts]
+    P2 --> N
+    P3 --> N
+    J4 --> N
+    J5 --> N
+    T --> N
 
     N --> O([prompt: string])
 
-    O --> P[Mastra agent\nGemini 2.5 Flash]
-    P --> Q([analysis: string])
+    O --> Q[Mastra agent\nGemini 2.5 Flash]
+    Q --> R([analysis: string])
 
-    Q --> R[formatter.ts]
     R --> S([stdout])
 
     style A fill:#1e1e2e,color:#cdd6f4,stroke:#89b4fa
     style S fill:#1e1e2e,color:#cdd6f4,stroke:#89b4fa
     style I fill:#1e1e2e,color:#cdd6f4,stroke:#a6e3a1
-    style J fill:#1e1e2e,color:#cdd6f4,stroke:#a6e3a1
-    style K fill:#1e1e2e,color:#cdd6f4,stroke:#a6e3a1
-    style M fill:#1e1e2e,color:#cdd6f4,stroke:#a6e3a1
+    style P1 fill:#1e1e2e,color:#cdd6f4,stroke:#a6e3a1
+    style P2 fill:#1e1e2e,color:#cdd6f4,stroke:#a6e3a1
+    style P3 fill:#1e1e2e,color:#cdd6f4,stroke:#a6e3a1
+    style J4 fill:#1e1e2e,color:#cdd6f4,stroke:#a6e3a1
+    style J5 fill:#1e1e2e,color:#cdd6f4,stroke:#a6e3a1
     style O fill:#1e1e2e,color:#cdd6f4,stroke:#a6e3a1
-    style Q fill:#1e1e2e,color:#cdd6f4,stroke:#a6e3a1
+    style R fill:#1e1e2e,color:#cdd6f4,stroke:#a6e3a1
     style B fill:#313244,color:#cdd6f4,stroke:#cba6f7
     style C fill:#313244,color:#cdd6f4,stroke:#cba6f7
     style D fill:#313244,color:#cdd6f4,stroke:#89dceb
@@ -173,9 +202,13 @@ flowchart TD
     style G fill:#313244,color:#cdd6f4,stroke:#89dceb
     style H fill:#313244,color:#cdd6f4,stroke:#89dceb
     style L fill:#313244,color:#cdd6f4,stroke:#fab387
+    style J1 fill:#313244,color:#cdd6f4,stroke:#f9e2af
+    style J2 fill:#313244,color:#cdd6f4,stroke:#f9e2af
+    style J3 fill:#313244,color:#cdd6f4,stroke:#f9e2af
+    style M fill:#313244,color:#cdd6f4,stroke:#f9e2af
     style N fill:#313244,color:#cdd6f4,stroke:#89dceb
-    style P fill:#313244,color:#cdd6f4,stroke:#89dceb
-    style R fill:#313244,color:#cdd6f4,stroke:#89dceb
+    style Q fill:#313244,color:#cdd6f4,stroke:#89dceb
+    style T fill:#313244,color:#cdd6f4,stroke:#cba6f7
 ```
 
 ---
@@ -243,6 +276,7 @@ only exposed via GraphQL.
 async function fetchProfile(username: string): Promise<GithubProfile>;
 async function fetchRepo(owner: string, repo: string): Promise<GithubRepo>;
 async function fetchRepoBySlug(slug: string): Promise<GithubRepo>; // parses "owner/repo"
+async function fetchTopRepositories(username: string, limit?: number): Promise<GithubRepo[]>;
 ```
 
 **Types (Zod-inferred, from `src/types/github/github.ts`):**
@@ -359,6 +393,7 @@ validates arguments and return values at runtime.
   agents — it is the single lookup point for the rest of the app.
 - `candidateExtractionAgent` — extracts `CandidateProfile` from resume text.
 - `linkedinExtractionAgent` — extracts `LinkedInProfile` from LinkedIn PDF text.
+- `jobExtractionAgent` — extracts `JobDescription` from a job posting URL or inline text.
 - `careerAnalysisAgent` — produces the free-text career analysis; carries the
   two GitHub tools for optional mid-reasoning enrichment.
 
@@ -410,29 +445,28 @@ source section and LinkedIn-specific cross-check instructions.
 function buildPrompt(
     profile: CandidateProfile,
     portfolio: GithubProfile,
-    goal: string,
-    linkedinProfile?: LinkedInProfile | null
+    target: AnalysisTarget,
+    linkedinProfile?: LinkedInProfile | null,
+    jobDescription?: JobDescription | null,
+    matchResult?: MatchResult | null,
 ): string;
-
-function formatLinkedInProfile(profile: LinkedInProfile): string;
 ```
 
 **Behavior:**
 
-- Opens with the AscentX system role preamble.
-- Serializes `CandidateProfile`: top skills, full skill taxonomy, roles with
-  tech stacks and duration, education.
-- Serializes `GithubProfile`: username, bio, followers, repo name + primary
-  language + description + README excerpt (first 600 chars, truncated with `…`).
-- When `linkedinProfile` is provided:
-  - Adds a `=== LINKEDIN PROFILE ===` section with endorsed skills (with peer
-    counts), recommendations (verbatim), courses, and volunteer experience.
-  - Adds instructions to cross-check endorsement counts against resume
-    `topSkills` and flag discrepancies.
-  - Numbers the data sources list as 1–4 instead of 1–3.
-- Injects the goal under `=== CAREER GOAL ===`.
-- Appends `=== INSTRUCTIONS ===` block with three verbatim output headings.
-- Response capped at 600 words in the instructions.
+- Dispatches to `buildGoalPrompt()` or `buildJobPrompt()` based on `target.mode`.
+- **Goal mode:** Opens with the AscentX system role preamble, serializes
+  candidate profile, GitHub portfolio, optional LinkedIn profile, and the
+  career goal. Output instructions request three verbatim section headings
+  (Current Standing, Technical Blind Spots, The Level-Up Roadmap).
+- **Job mode:** Same preamble and data sources plus the job description and
+  match scorecard. Output instructions request five verbatim section headings
+  (Match Summary, Current Standing, Technical Blind Spots, Quick Wins,
+  The Level-Up Roadmap).
+- README excerpts are truncated at 600 characters with `…`.
+- When `linkedinProfile` is provided, adds LinkedIn cross-check instructions
+  and numbers data sources 1–4 instead of 1–3.
+- Response capped at 1200 words in the instructions.
 - **No AI calls are made here.** This module is a pure string builder.
 
 ---
@@ -448,21 +482,27 @@ returns the final analysis string.
 async function analyze(
     resumePath: string,
     githubUsername: string,
-    goal: string,
+    target: AnalysisTarget,
     linkedinPath?: string
 ): Promise<string>;
 ```
 
 **Behavior:**
 
-1. Runs in parallel via `Promise.all`:
+1. Creates a `RunLogger` instance for the run.
+2. Runs in parallel via `Promise.all`:
    - `extractCandidateProfile({ filePath: resumePath })` → `profile`
    - `fetchProfile(githubUsername)` → `portfolio`
    - `extractLinkedInProfile({ filePath: linkedinPath })` → `linkedinProfile`
      (or `null` if `linkedinPath` is not provided)
-2. Calls `buildPrompt(profile, portfolio, goal, linkedinProfile)` → `prompt`
-3. Runs `careerAnalysisAgent` with the prompt → `analysis: string`
-4. Returns the raw analysis string.
+   - `extractJobDescription(target.jobInput)` → `jobDescription`
+     (only if `target.mode === "job"`)
+3. If job mode: calls `computeMatch(profile, portfolio, jobDescription)` → `matchResult`
+4. Calls `buildPrompt(profile, portfolio, target, linkedinProfile, jobDescription, matchResult)` → `prompt`
+5. Runs `careerAnalysisAgent` with the prompt → `analysis: string`
+6. Returns the raw analysis string.
+7. All stages are logged via `RunLogger` (resume extraction, GitHub fetch,
+   LinkedIn extraction, job extraction, job matching, prompt build, agent analysis).
 
 **No formatting logic lives here.** Output rendering is delegated to
 `formatter.ts`.
@@ -564,11 +604,13 @@ All secrets and configuration are stored in `.env` at the project root.
 GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key
 GOOGLE_GENERATIVE_AI_MODEL=gemini-2.5-flash    # optional, this is the default
 GITHUB_TOKEN=your_github_personal_access_token
+JOB_INPUT=                                           # optional, fallback for --job flag
 ```
 
-`GOOGLE_GENERATIVE_AI_API_KEY` is read by `@ai-sdk/google` inside all three
+`GOOGLE_GENERATIVE_AI_API_KEY` is read by `@ai-sdk/google` inside all four
 Mastra-driven pipelines. `GITHUB_TOKEN` authenticates the GraphQL client in
-`src/modules/github/github-client.ts`.
+`src/modules/github/github-client.ts`. `JOB_INPUT` is an optional fallback
+used by `scripts/analyze.ts` when the `--job` flag is not provided on the CLI.
 
 `.env` must never be committed to version control.
 
@@ -576,13 +618,13 @@ Mastra-driven pipelines. `GITHUB_TOKEN` authenticates the GraphQL client in
 
 ## CLI Usage
 
-**Analysis — resume + GitHub:**
+**Goal mode — resume + GitHub:**
 
 ```bash
 npm run analyze -- ./resume.pdf johndoe "Staff Engineer at a B2B SaaS company"
 ```
 
-**Analysis — resume + GitHub + LinkedIn:**
+**Goal mode — resume + GitHub + LinkedIn:**
 
 ```bash
 npm run analyze -- ./resume.pdf johndoe ./linkedin.pdf "Staff Engineer at a B2B SaaS company"
@@ -590,6 +632,13 @@ npm run analyze -- ./resume.pdf johndoe ./linkedin.pdf "Staff Engineer at a B2B 
 
 The script detects the LinkedIn path by checking whether the third positional
 argument ends with `.pdf`.
+
+**Job mode — with URL or inline text:**
+
+```bash
+npm run analyze -- ./resume.pdf johndoe --job "https://company.com/jobs/senior-engineer"
+npm run analyze -- ./resume.pdf johndoe ./linkedin.pdf --job "Staff Engineer at a B2B SaaS company"
+```
 
 **Manual testing scripts:**
 
@@ -622,6 +671,8 @@ message to `stderr`, and exits with a non-zero code.
 | `profile-extractor`       | `GOOGLE_GENERATIVE_AI_API_KEY is not set. Add it to your .env file.` |
 | `profile-extractor`       | Zod validation error when the agent returns a malformed profile      |
 | `linkedin/profile-extractor` | Same API key and Zod errors as candidate extractor               |
+| `job/job-extractor`       | `Failed to fetch job posting at <url>: HTTP 404`                     |
+| `job/job-extractor`       | Same `GOOGLE_GENERATIVE_AI_API_KEY` and Zod errors as other pipelines |
 | `career-analyzer`         | `Career analysis agent returned an empty response.`                  |
 
 ---
@@ -636,8 +687,9 @@ message to `stderr`, and exits with a non-zero code.
   based on file extension.
 - **New data source (e.g., Stack Overflow, personal site):** Add a module
   under `src/modules/`, define a Zod schema in `src/types/`, register the
-  agent in `mastra.ts`, and add an optional parameter to `analyze()` and
-  `buildPrompt()`.
+  agent in `mastra.ts`, and add an optional parallel branch in
+  `career-analyzer.ts` and optional parameters to `buildPrompt()`.
+  The job module (`src/modules/job/`) is the most recent example of this pattern.
 - **Persistence layer:** Insert a storage step inside the extractor (or as
   a downstream Mastra workflow) after the profile is validated.
 - **Web/API interface:** Both `extractCandidateProfile` and
