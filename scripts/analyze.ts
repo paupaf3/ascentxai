@@ -1,20 +1,37 @@
 import 'dotenv/config';
 import path from 'node:path';
 
-import { analyze } from '../src/modules/analyzer/career-analyzer';
+import { analyze, type AnalysisTarget } from '../src/modules/analyzer/career-analyzer';
 
 async function main(): Promise<void> {
-    const args = process.argv.slice(2);
-    const [rawResumePath, githubUsername, ...rest] = args;
+    const rawArgs = process.argv.slice(2);
 
-    if (!rawResumePath || !githubUsername || rest.length === 0) {
+    // Extract --job flag (takes priority over JOB_INPUT env var)
+    let jobInput: string | undefined;
+    const jobFlagIndex = rawArgs.indexOf('--job');
+    if (jobFlagIndex !== -1) {
+        jobInput = rawArgs[jobFlagIndex + 1];
+        if (!jobInput || jobInput.startsWith('--')) {
+            console.error('Error: --job requires a value (URL or job description text).');
+            process.exit(1);
+        }
+        rawArgs.splice(jobFlagIndex, 2);
+    } else if (process.env.JOB_INPUT) {
+        jobInput = process.env.JOB_INPUT;
+    }
+
+    const [rawResumePath, githubUsername, ...rest] = rawArgs;
+
+    if (!rawResumePath || !githubUsername) {
         console.error(
-            'Usage: npm run analyze -- <resume.pdf> <github-username> [linkedin.pdf] "<career goal>"',
+            'Usage:\n' +
+            '  Goal mode: npm run analyze -- <resume.pdf> <github-username> [linkedin.pdf] "<career goal>"\n' +
+            '  Job mode:  npm run analyze -- <resume.pdf> <github-username> [linkedin.pdf] --job <url-or-text>',
         );
         process.exit(1);
     }
 
-    // If the third argument looks like a PDF path, treat it as the LinkedIn export.
+    // Optional LinkedIn PDF is the first remaining arg if it ends in .pdf
     let rawLinkedInPath: string | undefined;
     let goalParts: string[];
 
@@ -24,25 +41,46 @@ async function main(): Promise<void> {
         goalParts = rest;
     }
 
-    if (goalParts.length === 0) {
-        console.error('Error: career goal is required.');
+    // Mutual exclusivity: require exactly one of goal or --job
+    const hasGoal = goalParts.length > 0;
+    const hasJob = jobInput !== undefined;
+
+    if (hasGoal && hasJob) {
+        console.error('Error: provide either a career goal or --job, not both.');
         process.exit(1);
     }
+
+    if (!hasGoal && !hasJob) {
+        console.error(
+            'Error: a career goal or --job is required.\n' +
+            '  Goal mode: npm run analyze -- <resume.pdf> <github-username> [linkedin.pdf] "<career goal>"\n' +
+            '  Job mode:  npm run analyze -- <resume.pdf> <github-username> [linkedin.pdf] --job <url-or-text>',
+        );
+        process.exit(1);
+    }
+
+    const target: AnalysisTarget = hasJob
+        ? { mode: 'job', jobInput: jobInput! }
+        : { mode: 'goal', goal: goalParts.join(' ') };
 
     const resumePath = path.resolve(process.cwd(), rawResumePath);
     const linkedinPath = rawLinkedInPath
         ? path.resolve(process.cwd(), rawLinkedInPath)
         : undefined;
-    const goal = goalParts.join(' ');
 
     console.log(`Resume:   ${resumePath}`);
     console.log(`GitHub:   ${githubUsername}`);
     if (linkedinPath) console.log(`LinkedIn: ${linkedinPath}`);
-    console.log(`Goal:     ${goal}`);
+    if (target.mode === 'goal') {
+        console.log(`Goal:     ${target.goal}`);
+    } else {
+        const jobDisplay = target.jobInput.startsWith('http') ? target.jobInput : '<inline text>';
+        console.log(`Job:      ${jobDisplay}`);
+    }
     console.log('─'.repeat(60));
     console.log('Running analysis...\n');
 
-    const analysis = await analyze(resumePath, githubUsername, goal, linkedinPath);
+    const analysis = await analyze(resumePath, githubUsername, target, linkedinPath);
 
     console.log(analysis);
 }

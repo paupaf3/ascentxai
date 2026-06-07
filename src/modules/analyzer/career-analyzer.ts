@@ -1,29 +1,27 @@
-import { mastra } from "../../mastra";
 import { RunLogger } from "../../logger";
+import { mastra } from "../../mastra";
+import type { AnalysisTarget } from "../../types/analysis-target";
+import type { JobDescription, MatchResult } from "../../types/job/job-description";
 import type { LinkedInProfile } from "../../types/linkedin/linkedin-profile";
 import { extractCandidateProfile } from "../candidate/profile-extractor";
 import { fetchProfile } from "../github/github-client";
+import { extractJobDescription } from "../job/job-extractor";
+import { computeMatch } from "../job/matcher";
 import { extractLinkedInProfile } from "../linkedin/profile-extractor";
 import { buildPrompt } from "./prompt-builder";
 
-/**
- * End-to-end career analysis orchestrator.
- *
- * Chains independent modules in parallel and returns the raw AI-generated
- * analysis string. LinkedIn is optional: when a path is supplied it is
- * extracted alongside the resume and GitHub; when omitted the analysis
- * falls back to two data sources.
- */
+export type { AnalysisTarget };
+
 export async function analyze(
     resumePath: string,
     githubUsername: string,
-    goal: string,
+    target: AnalysisTarget,
     linkedinPath?: string
 ): Promise<string> {
     const logger = new RunLogger({
         resumePath,
         githubUsername,
-        goal,
+        target,
         linkedinPath,
     });
     console.log(`[run:${logger.runId}] log → ${logger.logFile}`);
@@ -36,10 +34,16 @@ export async function analyze(
             username: githubUsername,
         });
         const linkedinStage = linkedinPath
-            ? logger.startStage("linkedin_extraction", {
-                  filePath: linkedinPath,
-              })
+            ? logger.startStage("linkedin_extraction", { filePath: linkedinPath })
             : null;
+        const jobStage =
+            target.mode === "job"
+                ? logger.startStage("job_extraction", {
+                      input: target.jobInput.startsWith("http")
+                          ? target.jobInput
+                          : "<inline text>",
+                  })
+                : null;
 
         const linkedinPromise: Promise<LinkedInProfile | null> = linkedinPath
             ? extractLinkedInProfile({ filePath: linkedinPath })
@@ -56,38 +60,76 @@ export async function analyze(
                   })
             : Promise.resolve(null);
 
-        const [profile, portfolio, linkedinProfile] = await Promise.all([
-            extractCandidateProfile({ filePath: resumePath })
-                .then((result) => {
-                    logger.endStage(resumeStage, {
-                        candidateName: result.name,
-                        topSkills: result.topSkills,
-                        totalYearsOfExperience: result.totalYearsOfExperience,
-                    });
-                    return result;
-                })
-                .catch((err: Error) => {
-                    logger.failStage(resumeStage, err.message);
-                    throw err;
-                }),
-            fetchProfile(githubUsername)
-                .then((result) => {
-                    logger.endStage(githubStage, {
-                        name: result.name,
-                        followers: result.followers,
-                        pinnedReposCount: result.pinnedRepos.length,
-                    });
-                    return result;
-                })
-                .catch((err: Error) => {
-                    logger.failStage(githubStage, err.message);
-                    throw err;
-                }),
-            linkedinPromise,
-        ]);
+        const jobPromise: Promise<JobDescription | null> =
+            target.mode === "job"
+                ? extractJobDescription(target.jobInput)
+                      .then((result) => {
+                          logger.endStage(jobStage!, {
+                              title: result.title,
+                              company: result.company,
+                              requiredSkillsCount: result.requiredSkills.length,
+                              preferredSkillsCount: result.preferredSkills.length,
+                          });
+                          return result;
+                      })
+                      .catch((err: Error) => {
+                          logger.failStage(jobStage!, err.message);
+                          throw err;
+                      })
+                : Promise.resolve(null);
+
+        const [profile, portfolio, linkedinProfile, jobDescription] =
+            await Promise.all([
+                extractCandidateProfile({ filePath: resumePath })
+                    .then((result) => {
+                        logger.endStage(resumeStage, {
+                            candidateName: result.name,
+                            topSkills: result.topSkills,
+                            totalYearsOfExperience: result.totalYearsOfExperience,
+                        });
+                        return result;
+                    })
+                    .catch((err: Error) => {
+                        logger.failStage(resumeStage, err.message);
+                        throw err;
+                    }),
+                fetchProfile(githubUsername)
+                    .then((result) => {
+                        logger.endStage(githubStage, {
+                            name: result.name,
+                            followers: result.followers,
+                            pinnedReposCount: result.pinnedRepos.length,
+                        });
+                        return result;
+                    })
+                    .catch((err: Error) => {
+                        logger.failStage(githubStage, err.message);
+                        throw err;
+                    }),
+                linkedinPromise,
+                jobPromise,
+            ]);
+
+        let matchResult: MatchResult | null = null;
+        if (jobDescription) {
+            const matchStage = logger.startStage("job_matching");
+            matchResult = computeMatch(profile, portfolio, jobDescription);
+            logger.endStage(matchStage, {
+                overallScore: matchResult.overallScore,
+                requiredSkillsScore: matchResult.requiredSkillsScore,
+                missingRequiredCount: matchResult.missingRequired.length,
+            });
+        }
 
         const promptStage = logger.startStage("prompt_build");
-        const prompt = buildPrompt(profile, portfolio, goal, linkedinProfile);
+        const prompt = buildPrompt(
+            profile,
+            portfolio,
+            target,
+            linkedinProfile,
+            jobDescription,
+            matchResult
+        );
         logger.endStage(promptStage, { promptLength: prompt.length });
 
         const analysisStage = logger.startStage("agent_analysis", {
@@ -95,19 +137,12 @@ export async function analyze(
         });
 
         const agent = mastra.getAgent("careerAnalysisAgent");
-        const result = await agent.generate([
-            { role: "user", content: prompt },
-        ]);
+        const result = await agent.generate([{ role: "user", content: prompt }]);
 
         if (!result.text) {
-            logger.failStage(
-                analysisStage,
-                "Agent returned an empty response."
-            );
+            logger.failStage(analysisStage, "Agent returned an empty response.");
             logger.fail("Career analysis agent returned an empty response.");
-            throw new Error(
-                "Career analysis agent returned an empty response."
-            );
+            throw new Error("Career analysis agent returned an empty response.");
         }
 
         logger.endStage(analysisStage, { outputLength: result.text.length });

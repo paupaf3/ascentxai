@@ -5,37 +5,39 @@ import { profileFixture } from "../github/fixtures/profile.fixture";
 import { repoNoReadmeFixture } from "../github/fixtures/repo.fixture";
 import { fullLinkedInFixture } from "../linkedin/fixtures/profile.fixture";
 import type { GithubProfile } from "../../../src/types/github/github";
+import type { AnalysisTarget } from "../../../src/types/analysis-target";
 
 const GOAL = "Staff Engineer at a B2B SaaS company";
+const TARGET: AnalysisTarget = { mode: "goal", goal: GOAL };
 
 describe("buildPrompt", () => {
     it("contains all three required output section headings", () => {
-        const prompt = buildPrompt(fullCandidateFixture, profileFixture, GOAL);
+        const prompt = buildPrompt(fullCandidateFixture, profileFixture, TARGET);
         expect(prompt).toContain("## Current Standing");
         expect(prompt).toContain("## Technical Blind Spots");
         expect(prompt).toContain("## The Level-Up Roadmap");
     });
 
     it("embeds the career goal verbatim", () => {
-        const prompt = buildPrompt(fullCandidateFixture, profileFixture, GOAL);
+        const prompt = buildPrompt(fullCandidateFixture, profileFixture, TARGET);
         expect(prompt).toContain(GOAL);
     });
 
     it("includes candidate top skills and experience", () => {
-        const prompt = buildPrompt(fullCandidateFixture, profileFixture, GOAL);
+        const prompt = buildPrompt(fullCandidateFixture, profileFixture, TARGET);
         expect(prompt).toContain("TypeScript");
         expect(prompt).toContain("10 years");
         expect(prompt).toContain("Staff Software Engineer");
     });
 
     it("includes GitHub username and pinned repo", () => {
-        const prompt = buildPrompt(fullCandidateFixture, profileFixture, GOAL);
+        const prompt = buildPrompt(fullCandidateFixture, profileFixture, TARGET);
         expect(prompt).toContain("testuser");
         expect(prompt).toContain("awesome-project");
     });
 
     it("includes repo primary language", () => {
-        const prompt = buildPrompt(fullCandidateFixture, profileFixture, GOAL);
+        const prompt = buildPrompt(fullCandidateFixture, profileFixture, TARGET);
         expect(prompt).toContain("[TypeScript]");
     });
 
@@ -47,7 +49,7 @@ describe("buildPrompt", () => {
                 { ...profileFixture.pinnedRepos[0], readme: longReadme },
             ],
         };
-        const prompt = buildPrompt(fullCandidateFixture, portfolio, GOAL);
+        const prompt = buildPrompt(fullCandidateFixture, portfolio, TARGET);
         expect(prompt).toContain("…");
         expect(prompt).not.toContain("A".repeat(700));
     });
@@ -57,14 +59,14 @@ describe("buildPrompt", () => {
             ...profileFixture,
             pinnedRepos: [repoNoReadmeFixture],
         };
-        const prompt = buildPrompt(fullCandidateFixture, portfolio, GOAL);
+        const prompt = buildPrompt(fullCandidateFixture, portfolio, TARGET);
         expect(prompt).toContain("No description");
         expect(prompt).not.toContain("README:");
     });
 
     it("handles a profile with no pinned repos", () => {
         const portfolio: GithubProfile = { ...profileFixture, pinnedRepos: [] };
-        const prompt = buildPrompt(fullCandidateFixture, portfolio, GOAL);
+        const prompt = buildPrompt(fullCandidateFixture, portfolio, TARGET);
         expect(prompt).toContain("No pinned repositories.");
     });
 
@@ -80,26 +82,18 @@ describe("buildPrompt", () => {
             education: [],
         };
         expect(() =>
-            buildPrompt(sparseProfile, profileFixture, GOAL)
+            buildPrompt(sparseProfile, profileFixture, TARGET)
         ).not.toThrow();
     });
 
     describe("without LinkedIn", () => {
         it("does not include a LINKEDIN PROFILE section", () => {
-            const prompt = buildPrompt(
-                fullCandidateFixture,
-                profileFixture,
-                GOAL
-            );
+            const prompt = buildPrompt(fullCandidateFixture, profileFixture, TARGET);
             expect(prompt).not.toContain("LINKEDIN PROFILE");
         });
 
         it("lists three data sources", () => {
-            const prompt = buildPrompt(
-                fullCandidateFixture,
-                profileFixture,
-                GOAL
-            );
+            const prompt = buildPrompt(fullCandidateFixture, profileFixture, TARGET);
             expect(prompt).toContain("3. Their stated career goal");
             expect(prompt).not.toContain("4. Their stated career goal");
         });
@@ -110,7 +104,7 @@ describe("buildPrompt", () => {
             const prompt = buildPrompt(
                 fullCandidateFixture,
                 profileFixture,
-                GOAL,
+                TARGET,
                 fullLinkedInFixture
             );
             expect(prompt).toContain("=== LINKEDIN PROFILE ===");
@@ -120,7 +114,7 @@ describe("buildPrompt", () => {
             const prompt = buildPrompt(
                 fullCandidateFixture,
                 profileFixture,
-                GOAL,
+                TARGET,
                 fullLinkedInFixture
             );
             expect(prompt).toContain("TypeScript");
@@ -131,7 +125,7 @@ describe("buildPrompt", () => {
             const prompt = buildPrompt(
                 fullCandidateFixture,
                 profileFixture,
-                GOAL,
+                TARGET,
                 fullLinkedInFixture
             );
             expect(prompt).toContain("Charles Babbage");
@@ -142,7 +136,7 @@ describe("buildPrompt", () => {
             const prompt = buildPrompt(
                 fullCandidateFixture,
                 profileFixture,
-                GOAL,
+                TARGET,
                 fullLinkedInFixture
             );
             expect(prompt).toContain("Distributed Systems");
@@ -152,7 +146,7 @@ describe("buildPrompt", () => {
             const prompt = buildPrompt(
                 fullCandidateFixture,
                 profileFixture,
-                GOAL,
+                TARGET,
                 fullLinkedInFixture
             );
             expect(prompt).toContain("4. Their stated career goal");
@@ -162,7 +156,7 @@ describe("buildPrompt", () => {
             const prompt = buildPrompt(
                 fullCandidateFixture,
                 profileFixture,
-                GOAL,
+                TARGET,
                 fullLinkedInFixture
             );
             expect(prompt).toContain("endorsement counts");
@@ -180,7 +174,7 @@ describe("buildPrompt", () => {
                 buildPrompt(
                     fullCandidateFixture,
                     profileFixture,
-                    GOAL,
+                    TARGET,
                     sparseLinkedIn
                 )
             ).not.toThrow();

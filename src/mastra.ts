@@ -2,6 +2,7 @@ import { Mastra } from '@mastra/core';
 
 import { careerAnalysisAgent } from './modules/analyzer/analysis-agent';
 import { candidateExtractionAgent } from './modules/candidate/extraction-agent';
+import { jobExtractionAgent } from './modules/job/extraction-agent';
 import { linkedinExtractionAgent } from './modules/linkedin/extraction-agent';
 
 /**
@@ -13,6 +14,7 @@ export const mastra = new Mastra({
     agents: {
         candidateExtractionAgent,
         careerAnalysisAgent,
+        jobExtractionAgent,
         linkedinExtractionAgent,
     },
 });

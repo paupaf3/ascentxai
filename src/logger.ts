@@ -2,6 +2,8 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
+import type { AnalysisTarget } from "./types/analysis-target";
+
 const LOGS_DIR = path.resolve(process.cwd(), "logs");
 
 export interface StageLog {
@@ -23,7 +25,7 @@ interface RunLog {
     inputs: {
         resumePath: string;
         githubUsername: string;
-        goal: string;
+        target: AnalysisTarget;
         linkedinPath?: string;
     };
     stages: StageLog[];
