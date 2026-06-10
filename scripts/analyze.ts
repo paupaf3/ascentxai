@@ -74,8 +74,17 @@ async function main(): Promise<void> {
     if (target.mode === 'goal') {
         console.log(`Goal:     ${target.goal}`);
     } else {
-        const jobDisplay = target.jobInput.startsWith('http') ? target.jobInput : '<inline text>';
-        console.log(`Job:      ${jobDisplay}`);
+        const isUrl = target.jobInput.startsWith('http');
+        if (isUrl) {
+            const url = new URL(target.jobInput);
+            console.log(`Job URL:  ${url.hostname}${url.pathname}`);
+        } else {
+            const truncated =
+                target.jobInput.length > 80
+                    ? target.jobInput.slice(0, 77) + '...'
+                    : target.jobInput;
+            console.log(`Job:      ${truncated}`);
+        }
     }
     console.log('─'.repeat(60));
     console.log('Running analysis...\n');
