@@ -3,7 +3,7 @@ import { Agent } from "@mastra/core/agent";
 import { getModel } from "../../llm/provider";
 import { fetchGithubRepoTool, fetchTopGithubReposTool } from "./tools";
 
-const DEFAULT_ANALYSIS_MODEL = "meta/llama-3.1-70b-instruct";
+const DEFAULT_ANALYSIS_MODEL = "nvidia/llama-3.3-nemotron-super-49b-v1";
 const analysisModel =
     process.env.ANALYSIS_MODEL?.trim() || DEFAULT_ANALYSIS_MODEL;
 
@@ -38,7 +38,10 @@ export const careerAnalysisAgent = new Agent({
         "- fetch_top_github_repos: call this when the pinned repos seem unrepresentative of the candidate's experience (e.g. a senior engineer with only one or two pinned repos, or pinned repos in languages unrelated to their claimed skills). Pass the GitHub username from the portfolio section.",
         "Do not call tools speculatively or to confirm information already present. If the provided context is sufficient, produce the analysis directly without any tool calls.",
     ].join("\n"),
-    model: getModel(analysisModel, { temperature: 0 }),
+    model: getModel(analysisModel, {
+        temperature: 0,
+        useLegacyFunctionCalling: true,
+    }),
     tools: {
         fetch_github_repo: fetchGithubRepoTool,
         fetch_top_github_repos: fetchTopGithubReposTool,

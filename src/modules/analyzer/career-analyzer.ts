@@ -1,7 +1,10 @@
 import { RunLogger } from "../../logger";
 import { mastra } from "../../mastra";
 import type { AnalysisTarget } from "../../types/analysis-target";
-import type { JobDescription, MatchResult } from "../../types/job/job-description";
+import type {
+    JobDescription,
+    MatchResult,
+} from "../../types/job/job-description";
 import type { LinkedInProfile } from "../../types/linkedin/linkedin-profile";
 import { extractCandidateProfile } from "../candidate/profile-extractor";
 import { fetchProfile } from "../github/github-client";
@@ -34,7 +37,9 @@ export async function analyze(
             username: githubUsername,
         });
         const linkedinStage = linkedinPath
-            ? logger.startStage("linkedin_extraction", { filePath: linkedinPath })
+            ? logger.startStage("linkedin_extraction", {
+                  filePath: linkedinPath,
+              })
             : null;
         const jobStage =
             target.mode === "job"
@@ -68,7 +73,8 @@ export async function analyze(
                               title: result.title,
                               company: result.company,
                               requiredSkillsCount: result.requiredSkills.length,
-                              preferredSkillsCount: result.preferredSkills.length,
+                              preferredSkillsCount:
+                                  result.preferredSkills.length,
                           });
                           return result;
                       })
@@ -85,7 +91,8 @@ export async function analyze(
                         logger.endStage(resumeStage, {
                             candidateName: result.name,
                             topSkills: result.topSkills,
-                            totalYearsOfExperience: result.totalYearsOfExperience,
+                            totalYearsOfExperience:
+                                result.totalYearsOfExperience,
                         });
                         return result;
                     })
@@ -133,18 +140,26 @@ export async function analyze(
         logger.endStage(promptStage, { promptLength: prompt.length });
 
         const analysisStage = logger.startStage("agent_analysis", {
-            model: process.env.ANALYSIS_MODEL?.trim() ??
+            model:
+                process.env.ANALYSIS_MODEL?.trim() ??
                 process.env.EXTRACTION_MODEL?.trim() ??
-                "meta/llama-3.1-70b-instruct",
+                "nvidia/llama-3.3-nemotron-super-49b-v1",
         });
 
         const agent = mastra.getAgent("careerAnalysisAgent");
-        const result = await agent.generate([{ role: "user", content: prompt }]);
+        const result = await agent.generate([
+            { role: "user", content: prompt },
+        ]);
 
         if (!result.text) {
-            logger.failStage(analysisStage, "Agent returned an empty response.");
+            logger.failStage(
+                analysisStage,
+                "Agent returned an empty response."
+            );
             logger.fail("Career analysis agent returned an empty response.");
-            throw new Error("Career analysis agent returned an empty response.");
+            throw new Error(
+                "Career analysis agent returned an empty response."
+            );
         }
 
         logger.endStage(analysisStage, { outputLength: result.text.length });
