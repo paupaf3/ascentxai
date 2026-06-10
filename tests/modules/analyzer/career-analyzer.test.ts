@@ -125,9 +125,9 @@ describe('analyze', () => {
     });
 
     it('propagates errors from extractCandidateProfile', async () => {
-        mockedExtract.mockRejectedValueOnce(new Error('GOOGLE_GENERATIVE_AI_API_KEY is not set'));
+        mockedExtract.mockRejectedValueOnce(new Error('NIM_API_KEY is not set'));
         await expect(analyze('/tmp/resume.pdf', 'testuser', TARGET_GOAL)).rejects.toThrow(
-            'GOOGLE_GENERATIVE_AI_API_KEY is not set',
+            'NIM_API_KEY is not set',
         );
     });
 

@@ -18,9 +18,9 @@ export type LinkedInExtractionInput =
     | LinkedInExtractionInputFromBuffer;
 
 function assertApiKey(): void {
-    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    if (!process.env.NIM_API_KEY) {
         throw new Error(
-            "GOOGLE_GENERATIVE_AI_API_KEY is not set. Add it to your .env file before running extraction."
+            "NIM_API_KEY is not set. Add it to your .env file before running extraction."
         );
     }
 }

@@ -1,9 +1,10 @@
-import { google } from "@ai-sdk/google";
 import { Agent } from "@mastra/core/agent";
 
-const DEFAULT_EXTRACTION_MODEL = "gemini-2.5-flash";
+import { getModel } from "../../llm/provider";
+
+const DEFAULT_EXTRACTION_MODEL = "meta/llama-3.1-8b-instruct";
 const extractionModel =
-    process.env.GOOGLE_GENERATIVE_AI_MODEL?.trim() || DEFAULT_EXTRACTION_MODEL;
+    process.env.EXTRACTION_MODEL?.trim() || DEFAULT_EXTRACTION_MODEL;
 
 export const jobExtractionAgent = new Agent({
     name: "job-extraction-agent",
@@ -29,5 +30,5 @@ export const jobExtractionAgent = new Agent({
         "DOMAIN",
         "- Infer the business domain from company context, product description, or the nature of the work (e.g. 'payments', 'developer tooling', 'ML infrastructure'). Return null if unclear.",
     ].join("\n"),
-    model: google(extractionModel, { temperature: 0 }),
+    model: getModel(extractionModel, { temperature: 0 }),
 });

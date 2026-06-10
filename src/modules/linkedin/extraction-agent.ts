@@ -1,9 +1,10 @@
-import { google } from "@ai-sdk/google";
 import { Agent } from "@mastra/core/agent";
 
-const DEFAULT_EXTRACTION_MODEL = "gemini-2.5-flash";
+import { getModel } from "../../llm/provider";
+
+const DEFAULT_EXTRACTION_MODEL = "meta/llama-3.1-8b-instruct";
 const extractionModel =
-    process.env.GOOGLE_GENERATIVE_AI_MODEL?.trim() || DEFAULT_EXTRACTION_MODEL;
+    process.env.EXTRACTION_MODEL?.trim() || DEFAULT_EXTRACTION_MODEL;
 
 /**
  * Mastra agent for extracting structured data from a LinkedIn PDF export.
@@ -52,5 +53,5 @@ export const linkedinExtractionAgent = new Agent({
         "- Use the candidate's own words as closely as the PDF text allows.",
         "- If the PDF text is garbled due to extraction, reconstruct the most faithful reading.",
     ].join("\n"),
-    model: google(extractionModel, { temperature: 0 }),
+    model: getModel(extractionModel, { temperature: 0 }),
 });

@@ -30,19 +30,19 @@ const mockedParseBuffer = parsePdfFromBuffer as unknown as ReturnType<
     typeof vi.fn
 >;
 
-const ORIGINAL_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+const ORIGINAL_KEY = process.env.NIM_API_KEY;
 
 beforeEach(() => {
     vi.clearAllMocks();
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY = "test-key";
+    process.env.NIM_API_KEY = "test-key";
     generateMock.mockResolvedValue({ object: fullLinkedInFixture });
 });
 
 afterEach(() => {
     if (ORIGINAL_KEY === undefined) {
-        delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+        delete process.env.NIM_API_KEY;
     } else {
-        process.env.GOOGLE_GENERATIVE_AI_API_KEY = ORIGINAL_KEY;
+        process.env.NIM_API_KEY = ORIGINAL_KEY;
     }
 });
 
@@ -83,11 +83,11 @@ describe("extractLinkedInProfile", () => {
     });
 
     it("throws a descriptive error when the API key is missing", async () => {
-        delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+        delete process.env.NIM_API_KEY;
 
         await expect(
             extractLinkedInProfile({ filePath: "/tmp/linkedin.pdf" })
-        ).rejects.toThrow(/GOOGLE_GENERATIVE_AI_API_KEY/);
+        ).rejects.toThrow(/NIM_API_KEY/);
 
         expect(mockedParsePath).not.toHaveBeenCalled();
         expect(generateMock).not.toHaveBeenCalled();

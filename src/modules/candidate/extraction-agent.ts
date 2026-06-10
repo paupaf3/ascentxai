@@ -1,9 +1,10 @@
-import { google } from "@ai-sdk/google";
 import { Agent } from "@mastra/core/agent";
 
-const DEFAULT_EXTRACTION_MODEL = "gemini-2.5-flash";
+import { getModel } from "../../llm/provider";
+
+const DEFAULT_EXTRACTION_MODEL = "meta/llama-3.1-8b-instruct";
 const extractionModel =
-    process.env.GOOGLE_GENERATIVE_AI_MODEL?.trim() || DEFAULT_EXTRACTION_MODEL;
+    process.env.EXTRACTION_MODEL?.trim() || DEFAULT_EXTRACTION_MODEL;
 
 /**
  * Mastra agent responsible for extracting a rich, structured candidate
@@ -53,5 +54,5 @@ export const candidateExtractionAgent = new Agent({
         "LINKS",
         '- Scan the full document (header, footer, contact block, project descriptions) for GitHub, LinkedIn, and personal-site URLs. A bare GitHub username like "github.com/foo" or "@foo" on a contact line counts.',
     ].join("\n"),
-    model: google(extractionModel, { temperature: 0 }),
+    model: getModel(extractionModel, { temperature: 0 }),
 });

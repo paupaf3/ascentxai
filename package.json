@@ -32,7 +32,7 @@
         "vitest": "^4.1.4"
     },
     "dependencies": {
-        "@ai-sdk/google": "^1.0.0",
+        "@ai-sdk/openai": "^1.0.0",
         "@mastra/core": "^0.10.0",
         "@octokit/graphql": "^9.0.3",
         "dotenv": "^17.4.2",

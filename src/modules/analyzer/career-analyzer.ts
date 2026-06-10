@@ -133,7 +133,9 @@ export async function analyze(
         logger.endStage(promptStage, { promptLength: prompt.length });
 
         const analysisStage = logger.startStage("agent_analysis", {
-            model: process.env.GOOGLE_GENERATIVE_AI_MODEL ?? "gemini-2.5-flash",
+            model: process.env.ANALYSIS_MODEL?.trim() ??
+                process.env.EXTRACTION_MODEL?.trim() ??
+                "meta/llama-3.1-70b-instruct",
         });
 
         const agent = mastra.getAgent("careerAnalysisAgent");
