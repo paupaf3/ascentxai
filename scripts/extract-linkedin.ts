@@ -1,12 +1,14 @@
-import 'dotenv/config';
-import path from 'node:path';
+import "dotenv/config";
+import path from "node:path";
 
-import { extractLinkedInProfile } from '../src/modules/linkedin/profile-extractor';
+import { extractLinkedInProfile } from "../src/modules/linkedin/profile-extractor";
 
 async function main(): Promise<void> {
     const [, , rawPath] = process.argv;
     if (!rawPath) {
-        console.error('Usage: npm run linkedin:extract -- <path-to-linkedin.pdf>');
+        console.error(
+            "Usage: npm run linkedin:extract -- <path-to-linkedin.pdf>"
+        );
         process.exit(1);
     }
 
@@ -16,6 +18,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-    console.error('LinkedIn extraction failed:', error);
+    console.error("LinkedIn extraction failed:", error);
     process.exit(1);
 });

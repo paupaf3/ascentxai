@@ -19,7 +19,7 @@ export async function analyze(
     resumePath: string,
     githubUsername: string,
     target: AnalysisTarget,
-    linkedinPath?: string
+    linkedinPath: string
 ): Promise<string> {
     const logger = new RunLogger({
         resumePath,
@@ -54,7 +54,7 @@ export async function analyze(
             ? extractLinkedInProfile({ filePath: linkedinPath })
                   .then((result) => {
                       logger.endStage(linkedinStage!, {
-                          name: result.name,
+                          name: result.fullName,
                           connections: result.connections,
                       });
                       return result;
@@ -89,7 +89,7 @@ export async function analyze(
                 extractCandidateProfile({ filePath: resumePath })
                     .then((result) => {
                         logger.endStage(resumeStage, {
-                            candidateName: result.name,
+                            candidateName: result.fullName,
                             topSkills: result.topSkills,
                             totalYearsOfExperience:
                                 result.totalYearsOfExperience,

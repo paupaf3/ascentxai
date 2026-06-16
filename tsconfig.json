@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         // File layout
-        "rootDir": "./src",
+        "rootDir": ".",
         "outDir": "./dist",
 
         // Environment
@@ -23,6 +23,6 @@
         "noUncheckedIndexedAccess": true,
         "exactOptionalPropertyTypes": true
     },
-    "include": ["src/**/*"],
+    "include": ["src/**/*", "tests/**/*", "scripts/**/*"],
     "exclude": ["node_modules", "dist"]
 }

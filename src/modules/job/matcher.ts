@@ -100,7 +100,7 @@ export function computeMatch(
 
     // Tech depth (average across matched required skills, normalized to 0–1)
     const depthValues = matchedRequired.map((m) => m.depth / 3);
-    const techDepthScore =
+    const averageTechDepthScore =
         depthValues.length === 0
             ? 0
             : depthValues.reduce((a, b) => a + b, 0) / depthValues.length;
@@ -109,7 +109,7 @@ export function computeMatch(
     const overallScore =
         requiredSkillsScore * 0.45 +
         experienceScore * 0.25 +
-        techDepthScore * 0.2 +
+        averageTechDepthScore * 0.2 +
         preferredSkillsScore * 0.1;
 
     return {
@@ -117,7 +117,7 @@ export function computeMatch(
         requiredSkillsScore: Math.round(requiredSkillsScore * 100),
         preferredSkillsScore: Math.round(preferredSkillsScore * 100),
         experienceScore: Math.round(experienceScore * 100),
-        techDepthScore: Math.round(techDepthScore * 100),
+        averageTechDepthScore: Math.round(averageTechDepthScore * 100),
         matchedRequired,
         missingRequired,
         matchedPreferred,

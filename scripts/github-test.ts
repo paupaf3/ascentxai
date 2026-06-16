@@ -12,7 +12,6 @@
 import "dotenv/config";
 import {
     fetchProfile,
-    fetchRepo,
     fetchRepoBySlug,
 } from "../src/modules/github/github-client";
 import { GithubProfile, GithubRepo } from "../src/types/github/github";

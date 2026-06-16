@@ -2,7 +2,10 @@ import { z } from "zod";
 
 export const jobDescriptionSchema = z.object({
     title: z.string().describe("Job title exactly as written in the posting."),
-    company: z.string().nullable().describe("Company name, or null if not found."),
+    company: z
+        .string()
+        .nullable()
+        .describe("Company name, or null if not found."),
     seniorityLevel: z
         .enum(["junior", "mid", "senior", "staff", "principal"])
         .nullable()
@@ -10,7 +13,9 @@ export const jobDescriptionSchema = z.object({
     minYearsExperience: z
         .number()
         .nullable()
-        .describe("Minimum years of experience required, or null if not stated."),
+        .describe(
+            "Minimum years of experience required, or null if not stated."
+        ),
     requiredSkills: z
         .array(z.string())
         .describe(
@@ -44,7 +49,7 @@ export interface MatchResult {
     requiredSkillsScore: number;
     preferredSkillsScore: number;
     experienceScore: number;
-    techDepthScore: number;
+    averageTechDepthScore: number;
     matchedRequired: SkillMatch[];
     missingRequired: string[];
     matchedPreferred: string[];

@@ -219,11 +219,15 @@ function formatMatchScorecard(match: MatchResult, job: JobDescription): string {
 
     const lines: string[] = [];
     lines.push(`Overall match:    ${bar(match.overallScore)}`);
-    lines.push(`Required skills:  ${bar(match.requiredSkillsScore)}  (${match.matchedRequired.length}/${job.requiredSkills.length} matched)`);
+    lines.push(
+        `Required skills:  ${bar(match.requiredSkillsScore)}  (${match.matchedRequired.length}/${job.requiredSkills.length} matched)`
+    );
     lines.push(`Experience:       ${bar(match.experienceScore)}`);
-    lines.push(`Tech depth:       ${bar(match.techDepthScore)}`);
+    lines.push(`Tech depth:       ${bar(match.averageTechDepthScore)}`);
     if (job.preferredSkills.length > 0)
-        lines.push(`Preferred skills: ${bar(match.preferredSkillsScore)}  (${match.matchedPreferred.length}/${job.preferredSkills.length} matched)`);
+        lines.push(
+            `Preferred skills: ${bar(match.preferredSkillsScore)}  (${match.matchedPreferred.length}/${job.preferredSkills.length} matched)`
+        );
 
     if (match.missingRequired.length > 0)
         lines.push(`\nMissing required: ${match.missingRequired.join(", ")}`);
