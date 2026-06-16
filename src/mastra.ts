@@ -1,9 +1,9 @@
-import { Mastra } from '@mastra/core';
+import { Mastra } from "@mastra/core";
 
-import { careerAnalysisAgent } from './modules/analyzer/analysis-agent';
-import { candidateExtractionAgent } from './modules/candidate/extraction-agent';
-import { jobExtractionAgent } from './modules/job/extraction-agent';
-import { linkedinExtractionAgent } from './modules/linkedin/extraction-agent';
+import { careerAnalysisAgent } from "./modules/analyzer/analysis-agent";
+import { candidateExtractionAgent } from "./modules/candidate/extraction-agent";
+import { jobExtractionAgent } from "./modules/job/extraction-agent";
+import { linkedinExtractionAgent } from "./modules/linkedin/extraction-agent";
 
 /**
  * Central Mastra instance. Registering agents here enables Mastra's built-in

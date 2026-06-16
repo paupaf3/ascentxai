@@ -222,13 +222,13 @@ data source.
 **Tasks:**
 
 - [x] Implement `analyze(resumePath, githubUsername, target: AnalysisTarget, linkedinPath?): Promise<string>`
-     1. Run in parallel via `Promise.all`:
+    1.  Run in parallel via `Promise.all`:
         - `extractCandidateProfile({ filePath: resumePath })` → `profile`
         - `fetchProfile(githubUsername)` → `portfolio`
         - `extractLinkedInProfile({ filePath: linkedinPath })` → `linkedinProfile` (or `null`)
-     2. Call `buildPrompt(profile, portfolio, goal, linkedinProfile)` → `prompt`
-     3. Run `careerAnalysisAgent` with the prompt → `analysis: string`
-     4. Return `analysis`
+    2.  Call `buildPrompt(profile, portfolio, goal, linkedinProfile)` → `prompt`
+    3.  Run `careerAnalysisAgent` with the prompt → `analysis: string`
+    4.  Return `analysis`
 - [x] LinkedIn extraction runs in the same `Promise.all` as resume and GitHub —
       no added latency when all three sources are provided
 - [x] Define `fetch_github_repo` and `fetch_top_github_repos` tools in `analyzer/tools.ts`
@@ -380,19 +380,19 @@ messages with a non-zero exit code.
 
 ## Phase Summary
 
-| Phase | Module(s)                                               | Status         | Deliverable                              |
-| ----- | ------------------------------------------------------- | -------------- | ---------------------------------------- |
-| 0     | Project root                                            | ✅ Complete    | Compilable TypeScript scaffold           |
-| 1     | `candidate/pdf-parser.ts`                               | ✅ Complete    | PDF text extraction (path + buffer)      |
-| 2     | `github/github-client.ts` + queries + mapper            | ✅ Complete    | GitHub profile + pinned repos fetcher    |
-| 3     | `candidate/extraction-agent.ts` + `profile.ts`          | ✅ Complete    | Structured candidate profile (Mastra)    |
-| 3b    | `linkedin/extraction-agent.ts` + `linkedin-profile.ts`  | ✅ Complete    | Structured LinkedIn profile (Mastra)     |
-| 4     | `analyzer/prompt-builder.ts`                            | ✅ Complete    | Structured prompt assembly (3–4 sources) |
-| 5     | `analyzer/career-analyzer.ts` + `analyzer/tools.ts`     | ✅ Complete    | End-to-end orchestrator + agent tools    |
-| 5b    | `job/` module + `AnalysisTarget`                        | ✅ Complete    | Job description analysis mode + matching |
-| 6     | `output/formatter.ts`                                   | ⬜ Not started | Terminal output renderer                 |
-| 7     | `cli/index.ts`                                          | ⬜ Not started | Fully wired CLI with fallback input      |
-| 8     | Full pipeline                                           | ⬜ Not started | Validated PoC on real data               |
+| Phase | Module(s)                                              | Status         | Deliverable                              |
+| ----- | ------------------------------------------------------ | -------------- | ---------------------------------------- |
+| 0     | Project root                                           | ✅ Complete    | Compilable TypeScript scaffold           |
+| 1     | `candidate/pdf-parser.ts`                              | ✅ Complete    | PDF text extraction (path + buffer)      |
+| 2     | `github/github-client.ts` + queries + mapper           | ✅ Complete    | GitHub profile + pinned repos fetcher    |
+| 3     | `candidate/extraction-agent.ts` + `profile.ts`         | ✅ Complete    | Structured candidate profile (Mastra)    |
+| 3b    | `linkedin/extraction-agent.ts` + `linkedin-profile.ts` | ✅ Complete    | Structured LinkedIn profile (Mastra)     |
+| 4     | `analyzer/prompt-builder.ts`                           | ✅ Complete    | Structured prompt assembly (3–4 sources) |
+| 5     | `analyzer/career-analyzer.ts` + `analyzer/tools.ts`    | ✅ Complete    | End-to-end orchestrator + agent tools    |
+| 5b    | `job/` module + `AnalysisTarget`                       | ✅ Complete    | Job description analysis mode + matching |
+| 6     | `output/formatter.ts`                                  | ⬜ Not started | Terminal output renderer                 |
+| 7     | `cli/index.ts`                                         | ⬜ Not started | Fully wired CLI with fallback input      |
+| 8     | Full pipeline                                          | ⬜ Not started | Validated PoC on real data               |
 
 ---
 

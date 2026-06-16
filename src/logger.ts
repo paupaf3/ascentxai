@@ -78,8 +78,7 @@ export class RunLogger {
     endStage(stage: StageLog, metadata?: Record<string, unknown>): void {
         const now = new Date().toISOString();
         stage.finishedAt = now;
-        stage.durationMs =
-            Date.parse(now) - Date.parse(stage.startedAt);
+        stage.durationMs = Date.parse(now) - Date.parse(stage.startedAt);
         stage.status = "success";
         if (metadata) stage.metadata = { ...stage.metadata, ...metadata };
         this.flush();
@@ -88,8 +87,7 @@ export class RunLogger {
     failStage(stage: StageLog, error: string): void {
         const now = new Date().toISOString();
         stage.finishedAt = now;
-        stage.durationMs =
-            Date.parse(now) - Date.parse(stage.startedAt);
+        stage.durationMs = Date.parse(now) - Date.parse(stage.startedAt);
         stage.status = "error";
         stage.error = error;
         this.flush();

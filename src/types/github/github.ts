@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Public-facing GitHub schemas — the cleaned, mapped shape consumed by the
@@ -14,7 +14,7 @@ export const githubRepoSchema = z.object({
         .string()
         .nullable()
         .describe(
-            'Canonical language name as reported by GitHub (e.g. "TypeScript"). Compared directly against CandidateProfile skill names.',
+            'Canonical language name as reported by GitHub (e.g. "TypeScript"). Compared directly against CandidateProfile skill names.'
         ),
     url: z.string(),
     readme: z.string().nullable(),

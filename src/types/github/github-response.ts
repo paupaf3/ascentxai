@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Raw GitHub GraphQL response schemas. Validated at runtime so silent API

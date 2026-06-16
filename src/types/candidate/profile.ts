@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Candidate profile schema.
@@ -19,33 +19,33 @@ const YEAR_OR_MONTH = z
     .string()
     .regex(
         /^(\d{4}(-\d{2})?|present)$/i,
-        'Use YYYY, YYYY-MM, or the literal string "present".',
+        'Use YYYY, YYYY-MM, or the literal string "present".'
     );
 
 export const roleSchema = z.object({
-    title: z.string().nullable().describe('Job title held in this role.'),
-    company: z.string().nullable().describe('Employer or client name.'),
+    title: z.string().nullable().describe("Job title held in this role."),
+    company: z.string().nullable().describe("Employer or client name."),
     location: z.string().nullable().describe('City / country, or "remote".'),
     startDate: YEAR_OR_MONTH.nullable().describe(
-        'Role start date as YYYY or YYYY-MM. Null if not present in the resume.',
+        "Role start date as YYYY or YYYY-MM. Null if not present in the resume."
     ),
     endDate: YEAR_OR_MONTH.nullable().describe(
-        'Role end date as YYYY, YYYY-MM, or "present" for current roles.',
+        'Role end date as YYYY, YYYY-MM, or "present" for current roles.'
     ),
     yearsInRole: z
         .number()
         .nullable()
         .describe(
-            'Duration of this specific role in years (fractional allowed, e.g. 1.5). Compute from startDate/endDate when possible.',
+            "Duration of this specific role in years (fractional allowed, e.g. 1.5). Compute from startDate/endDate when possible."
         ),
     summary: z
         .string()
         .nullable()
-        .describe('One- or two-sentence summary of the role and impact.'),
+        .describe("One- or two-sentence summary of the role and impact."),
     technologies: z
         .array(z.string())
         .describe(
-            'Canonical names of technologies used in this role (languages, frameworks, tools). Used to cross-reference against GitHub activity.',
+            "Canonical names of technologies used in this role (languages, frameworks, tools). Used to cross-reference against GitHub activity."
         ),
 });
 
@@ -53,30 +53,40 @@ export const skillsSchema = z.object({
     languages: z
         .array(z.string())
         .describe(
-            'Programming languages, canonical form (e.g. "JavaScript", "TypeScript", "Python"). Must align with GitHub primaryLanguage values.',
+            'Programming languages, canonical form (e.g. "JavaScript", "TypeScript", "Python"). Must align with GitHub primaryLanguage values.'
         ),
     frameworks: z
         .array(z.string())
-        .describe('Frameworks and libraries (e.g. "React", "Next.js", "Django").'),
-    databases: z.array(z.string()).describe('Databases and data stores.'),
+        .describe(
+            'Frameworks and libraries (e.g. "React", "Next.js", "Django").'
+        ),
+    databases: z.array(z.string()).describe("Databases and data stores."),
     cloudAndInfra: z
         .array(z.string())
-        .describe('Cloud providers, infra, DevOps tools (AWS, Docker, Kubernetes...).'),
-    tools: z.array(z.string()).describe('Other notable tooling.'),
+        .describe(
+            "Cloud providers, infra, DevOps tools (AWS, Docker, Kubernetes...)."
+        ),
+    tools: z.array(z.string()).describe("Other notable tooling."),
     other: z
         .array(z.string())
-        .describe('Anything technical that does not fit the categories above.'),
+        .describe("Anything technical that does not fit the categories above."),
 });
 
 export const educationEntrySchema = z.object({
-    degree: z.string().nullable().describe('Name of the degree or certification.'),
-    field: z.string().nullable().describe('Field of study.'),
-    institution: z.string().nullable().describe('Name of the school or university.'),
-    startYear: z.string().nullable().describe('Start year as YYYY, or null.'),
+    degree: z
+        .string()
+        .nullable()
+        .describe("Name of the degree or certification."),
+    field: z.string().nullable().describe("Field of study."),
+    institution: z
+        .string()
+        .nullable()
+        .describe("Name of the school or university."),
+    startYear: z.string().nullable().describe("Start year as YYYY, or null."),
     endYear: z
         .string()
         .nullable()
-        .describe('End / graduation year as YYYY, or null if not present.'),
+        .describe("End / graduation year as YYYY, or null if not present."),
 });
 
 export const certificationSchema = z.object({
@@ -90,16 +100,23 @@ export const spokenLanguageSchema = z.object({
     proficiency: z
         .string()
         .nullable()
-        .describe('CEFR level or self-reported proficiency (e.g. "C1", "native").'),
+        .describe(
+            'CEFR level or self-reported proficiency (e.g. "C1", "native").'
+        ),
 });
 
 export const candidateLinksSchema = z.object({
     github: z
         .string()
         .nullable()
-        .describe('GitHub profile URL or username, if present anywhere in the resume.'),
-    linkedin: z.string().nullable().describe('LinkedIn profile URL, if present.'),
-    website: z.string().nullable().describe('Personal site or portfolio URL.'),
+        .describe(
+            "GitHub profile URL or username, if present anywhere in the resume."
+        ),
+    linkedin: z
+        .string()
+        .nullable()
+        .describe("LinkedIn profile URL, if present."),
+    website: z.string().nullable().describe("Personal site or portfolio URL."),
 });
 
 export const candidateProfileSchema = z.object({
@@ -110,32 +127,32 @@ export const candidateProfileSchema = z.object({
     headline: z
         .string()
         .nullable()
-        .describe('Short professional tagline or current-role headline.'),
+        .describe("Short professional tagline or current-role headline."),
     summary: z
         .string()
         .nullable()
-        .describe('Professional summary paragraph from the top of the resume.'),
+        .describe("Professional summary paragraph from the top of the resume."),
     links: candidateLinksSchema,
     totalYearsOfExperience: z
         .number()
         .nullable()
         .describe(
-            'Total professional experience in years, calculated from the non-overlapping sum of role durations.',
+            "Total professional experience in years, calculated from the non-overlapping sum of role durations."
         ),
     mostRecentJobTitle: z.string().nullable(),
     roles: z
         .array(roleSchema)
         .describe(
-            'All professional roles, ordered most recent first. Each role carries its own duration and technology list.',
+            "All professional roles, ordered most recent first. Each role carries its own duration and technology list."
         ),
     skills: skillsSchema.describe(
-        'Aggregated skill taxonomy across the whole resume, normalized and deduplicated.',
+        "Aggregated skill taxonomy across the whole resume, normalized and deduplicated."
     ),
     topSkills: z
         .array(z.string())
         .max(5)
         .describe(
-            'Up to five highest-signal technical skills for quick comparison against a career goal.',
+            "Up to five highest-signal technical skills for quick comparison against a career goal."
         ),
     education: z.array(educationEntrySchema),
     certifications: z.array(certificationSchema),

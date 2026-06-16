@@ -28,13 +28,13 @@ The project is built on **runtime-validated types** using Zod. Every data shape 
 
 Start here:
 
-| File | What to learn |
-|------|--------------|
-| `src/types/analysis-target.ts` | **3 lines.** A discriminated union: `{ mode: "goal", goal: string }` or `{ mode: "job", jobInput: string }`. The simplest type in the project — a good warm-up. |
-| `src/types/candidate/profile.ts` | **151 lines.** The largest schema. See how Zod models nested data: roles with per-role tech stacks, skill taxonomy (languages / frameworks / databases / cloud / tools / other), education, certifications. Note the `topSkills` cap at 5, and how nullable fields are handled. |
-| `src/types/job/job-description.ts` | **51 lines.** A newer schema — see how `JobDescription` differs from `CandidateProfile` (required vs preferred skills, seniority level, responsibilities). Also defines `MatchResult` and `SkillMatch` interfaces. |
-| `src/types/github/github.ts` + `github-response.ts` | Clean domain types + raw GraphQL response schemas. The separation between "what GitHub returns" and "what we use" is a deliberate pattern. |
-| `src/types/linkedin/linkedin-profile.ts` | **96 lines.** Reuses skill/role/education schemas from `candidate/profile.ts`. See how Zod composition works. |
+| File                                                | What to learn                                                                                                                                                                                                                                                                   |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/types/analysis-target.ts`                      | **3 lines.** A discriminated union: `{ mode: "goal", goal: string }` or `{ mode: "job", jobInput: string }`. The simplest type in the project — a good warm-up.                                                                                                                 |
+| `src/types/candidate/profile.ts`                    | **151 lines.** The largest schema. See how Zod models nested data: roles with per-role tech stacks, skill taxonomy (languages / frameworks / databases / cloud / tools / other), education, certifications. Note the `topSkills` cap at 5, and how nullable fields are handled. |
+| `src/types/job/job-description.ts`                  | **51 lines.** A newer schema — see how `JobDescription` differs from `CandidateProfile` (required vs preferred skills, seniority level, responsibilities). Also defines `MatchResult` and `SkillMatch` interfaces.                                                              |
+| `src/types/github/github.ts` + `github-response.ts` | Clean domain types + raw GraphQL response schemas. The separation between "what GitHub returns" and "what we use" is a deliberate pattern.                                                                                                                                      |
+| `src/types/linkedin/linkedin-profile.ts`            | **96 lines.** Reuses skill/role/education schemas from `candidate/profile.ts`. See how Zod composition works.                                                                                                                                                                   |
 
 ### Step 2 — Extraction Modules (the leaves)
 
@@ -48,36 +48,36 @@ Input (PDF / URL / text)
   → typed domain object
 ```
 
-| Module | Files | What to learn |
-|--------|-------|--------------|
-| **Candidate** | `modules/candidate/pdf-parser.ts`, `extraction-agent.ts`, `profile-extractor.ts` | The canonical extraction pipeline. `pdf-parser.ts` shows how to use `unpdf`; `extraction-agent.ts` shows how to define a Mastra agent with Zod output; `profile-extractor.ts` shows how to chain them with error handling. |
-| **LinkedIn** | `modules/linkedin/extraction-agent.ts`, `profile-extractor.ts` | Mirrors the candidate pipeline exactly. Reuses `pdf-parser.ts` from candidate (no code duplication). See how the agent instructions differ for LinkedIn-specific data (endorsed skills with peer counts, verbatim recommendations). |
-| **GitHub** | `modules/github/github-queries.ts`, `github-client.ts`, `github-mapper.ts` | No AI here — pure GraphQL. `github-queries.ts` has the GraphQL strings; `github-client.ts` is the API client with auth & error handling; `github-mapper.ts` maps raw responses to clean types. |
-| **Job** | `modules/job/extraction-agent.ts`, `job-extractor.ts`, `matcher.ts` | The newest module. `job-extractor.ts` handles both URL (HTTP fetch + HTML stripping) and inline text input. `matcher.ts` contains the algorithmic scoring engine. |
+| Module        | Files                                                                            | What to learn                                                                                                                                                                                                                       |
+| ------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Candidate** | `modules/candidate/pdf-parser.ts`, `extraction-agent.ts`, `profile-extractor.ts` | The canonical extraction pipeline. `pdf-parser.ts` shows how to use `unpdf`; `extraction-agent.ts` shows how to define a Mastra agent with Zod output; `profile-extractor.ts` shows how to chain them with error handling.          |
+| **LinkedIn**  | `modules/linkedin/extraction-agent.ts`, `profile-extractor.ts`                   | Mirrors the candidate pipeline exactly. Reuses `pdf-parser.ts` from candidate (no code duplication). See how the agent instructions differ for LinkedIn-specific data (endorsed skills with peer counts, verbatim recommendations). |
+| **GitHub**    | `modules/github/github-queries.ts`, `github-client.ts`, `github-mapper.ts`       | No AI here — pure GraphQL. `github-queries.ts` has the GraphQL strings; `github-client.ts` is the API client with auth & error handling; `github-mapper.ts` maps raw responses to clean types.                                      |
+| **Job**       | `modules/job/extraction-agent.ts`, `job-extractor.ts`, `matcher.ts`              | The newest module. `job-extractor.ts` handles both URL (HTTP fetch + HTML stripping) and inline text input. `matcher.ts` contains the algorithmic scoring engine.                                                                   |
 
 ### Step 3 — The Analyzer (the orchestrator)
 
-| File | What to learn |
-|------|--------------|
-| `modules/analyzer/prompt-builder.ts` | **468 lines, the largest file.** Pure string-building. Two modes (goal + job), handles 3 or 4 data sources, README excerpting, LinkedIn cross-check instructions, 1200-word limit. The output section headings are verbatim contract between prompt and agent. |
-| `modules/analyzer/career-analyzer.ts` | The main orchestrator. Runs 4 extraction pipelines in parallel via `Promise.all`, then builds the prompt, calls the analysis agent, and returns the result. Learn how staged logging is wired. |
-| `modules/analyzer/tools.ts` | Two Mastra tools the analysis agent can call mid-reasoning to fetch more GitHub data. Shows how tools are defined with Zod I/O schemas. |
+| File                                  | What to learn                                                                                                                                                                                                                                                  |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `modules/analyzer/prompt-builder.ts`  | **468 lines, the largest file.** Pure string-building. Two modes (goal + job), handles 3 or 4 data sources, README excerpting, LinkedIn cross-check instructions, 1200-word limit. The output section headings are verbatim contract between prompt and agent. |
+| `modules/analyzer/career-analyzer.ts` | The main orchestrator. Runs 4 extraction pipelines in parallel via `Promise.all`, then builds the prompt, calls the analysis agent, and returns the result. Learn how staged logging is wired.                                                                 |
+| `modules/analyzer/tools.ts`           | Two Mastra tools the analysis agent can call mid-reasoning to fetch more GitHub data. Shows how tools are defined with Zod I/O schemas.                                                                                                                        |
 
 ### Step 4 — Supporting Infrastructure
 
-| File | What to learn |
-|------|--------------|
+| File        | What to learn                                                                                                                        |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `logger.ts` | `RunLogger` class. Creates one JSON log file per run with staged timing. Synchronous writes (`writeFileSync`) — simple but blocking. |
-| `mastra.ts` | Central agent registry. All 4 agents registered on one `Mastra` instance for observability. |
+| `mastra.ts` | Central agent registry. All 4 agents registered on one `Mastra` instance for observability.                                          |
 
 ### Step 5 — Scripts & Entry Points
 
-| File | What to learn |
-|------|--------------|
-| `scripts/analyze.ts` | The de facto CLI. Raw `process.argv` parsing with `--job` flag detection and LinkedIn PDF auto-detection. Not the final CLI — that's planned in `src/cli/index.ts`. |
-| `scripts/extract-resume.ts` | Minimal test harness for the candidate extraction pipeline. |
-| `scripts/extract-linkedin.ts` | Mirror of above for LinkedIn. |
-| `scripts/github-test.ts` | Subcommand-based test harness for the GitHub module. |
+| File                          | What to learn                                                                                                                                                       |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/analyze.ts`          | The de facto CLI. Raw `process.argv` parsing with `--job` flag detection and LinkedIn PDF auto-detection. Not the final CLI — that's planned in `src/cli/index.ts`. |
+| `scripts/extract-resume.ts`   | Minimal test harness for the candidate extraction pipeline.                                                                                                         |
+| `scripts/extract-linkedin.ts` | Mirror of above for LinkedIn.                                                                                                                                       |
+| `scripts/github-test.ts`      | Subcommand-based test harness for the GitHub module.                                                                                                                |
 
 ---
 
@@ -91,11 +91,11 @@ Given a **PDF resume**, a **GitHub username**, an optional **LinkedIn PDF export
 4. If in **job mode**: fetches/parses the job description and computes an algorithmic match scorecard
 5. Cross-references all sources against the target
 6. Produces a structured analysis with:
-   - **Match Summary** (job mode only) — overall fit score interpretation
-   - **Current Standing** — evidence-based assessment
-   - **Technical Blind Spots** — specific gaps to close
-   - **Quick Wins** (job mode only) — immediate improvements
-   - **The Level-Up Roadmap** — a concrete "Hero Project"
+    - **Match Summary** (job mode only) — overall fit score interpretation
+    - **Current Standing** — evidence-based assessment
+    - **Technical Blind Spots** — specific gaps to close
+    - **Quick Wins** (job mode only) — immediate improvements
+    - **The Level-Up Roadmap** — a concrete "Hero Project"
 
 ---
 
@@ -140,16 +140,16 @@ npm run github:test repo <owner/repo>
 
 ## Tech Stack & Why
 
-| Library | Role | Why this one? |
-|---------|------|---------------|
-| [**Mastra**](https://mastra.dev) (`@mastra/core`) | AI agent framework | Lighter than LangChain. Handles agent lifecycle, tool binding, structured output, and observability out of the box. |
-| [**Vercel AI SDK**](https://sdk.vercel.ai) (`@ai-sdk/google`) | Model binding | Provider-agnostic abstraction. Swap Gemini → OpenAI by changing one import. Model name configurable via `GOOGLE_GENERATIVE_AI_MODEL` env var. |
-| [**Zod**](https://zod.dev) | Runtime validation | Every external boundary (GitHub API, AI agent output, tool I/O) is validated at runtime. Prevents `undefined` propagation and catches API drift early. |
-| [**Octokit GraphQL**](https://github.com/octokit/graphql.js) (`@octokit/graphql`) | GitHub API client | Official GitHub SDK. GraphQL lets us fetch profile + pinned repos + READMEs in a single round-trip. |
-| [**unpdf**](https://github.com/ycjcl868/unpdf) | PDF text extraction | Zero-dependency PDF parser. Chosen over `pdf-parse` (native build issues) and `pdfjs-dist` (heavy). |
-| [**tsx**](https://github.com/privatenumber/tsx) | TypeScript execution | Runs `.ts` files directly — no compile step. Faster than `ts-node`. |
-| [**Vitest**](https://vitest.dev) | Test runner | Drop-in Jest replacement. Faster, ESM-native, built-in coverage, same `describe`/`it`/`expect` API. |
-| [**dotenv**](https://github.com/motdotla/dotenv) | Environment config | Loads `.env` at startup. Standard for Node CLI tools. |
+| Library                                                                           | Role                 | Why this one?                                                                                                                                          |
+| --------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [**Mastra**](https://mastra.dev) (`@mastra/core`)                                 | AI agent framework   | Lighter than LangChain. Handles agent lifecycle, tool binding, structured output, and observability out of the box.                                    |
+| [**Vercel AI SDK**](https://sdk.vercel.ai) (`@ai-sdk/google`)                     | Model binding        | Provider-agnostic abstraction. Swap Gemini → OpenAI by changing one import. Model name configurable via `GOOGLE_GENERATIVE_AI_MODEL` env var.          |
+| [**Zod**](https://zod.dev)                                                        | Runtime validation   | Every external boundary (GitHub API, AI agent output, tool I/O) is validated at runtime. Prevents `undefined` propagation and catches API drift early. |
+| [**Octokit GraphQL**](https://github.com/octokit/graphql.js) (`@octokit/graphql`) | GitHub API client    | Official GitHub SDK. GraphQL lets us fetch profile + pinned repos + READMEs in a single round-trip.                                                    |
+| [**unpdf**](https://github.com/ycjcl868/unpdf)                                    | PDF text extraction  | Zero-dependency PDF parser. Chosen over `pdf-parse` (native build issues) and `pdfjs-dist` (heavy).                                                    |
+| [**tsx**](https://github.com/privatenumber/tsx)                                   | TypeScript execution | Runs `.ts` files directly — no compile step. Faster than `ts-node`.                                                                                    |
+| [**Vitest**](https://vitest.dev)                                                  | Test runner          | Drop-in Jest replacement. Faster, ESM-native, built-in coverage, same `describe`/`it`/`expect` API.                                                    |
+| [**dotenv**](https://github.com/motdotla/dotenv)                                  | Environment config   | Loads `.env` at startup. Standard for Node CLI tools.                                                                                                  |
 
 ---
 
@@ -225,29 +225,32 @@ export type CandidateProfile = z.infer<typeof candidateProfileSchema>;
 
 This gives you **runtime validation** (parse AI output with `schema.parse()`) and **compile-time safety** (TypeScript knows the shape).
 
-| Schema file | Key validation rules |
-|-------------|--------------------|
-| `candidate/profile.ts` | `topSkills` max 5, date format YYYY or YYYY-MM or "present", skill buckets required |
-| `github/github-response.ts` | Validates raw GraphQL response shape before mapping |
-| `linkedin/linkedin-profile.ts` | Reuses `roleSchema`, `skillsSchema` from candidate |
-| `job/job-description.ts` | `requiredSkills` and `preferredSkills` must be disjoint |
+| Schema file                    | Key validation rules                                                                |
+| ------------------------------ | ----------------------------------------------------------------------------------- |
+| `candidate/profile.ts`         | `topSkills` max 5, date format YYYY or YYYY-MM or "present", skill buckets required |
+| `github/github-response.ts`    | Validates raw GraphQL response shape before mapping                                 |
+| `linkedin/linkedin-profile.ts` | Reuses `roleSchema`, `skillsSchema` from candidate                                  |
+| `job/job-description.ts`       | `requiredSkills` and `preferredSkills` must be disjoint                             |
 
 ### Extraction Modules
 
 All four extraction modules follow the same pattern. The **candidate module** is the canonical example:
 
 **`pdf-parser.ts`** — I/O layer:
+
 - `parsePdfFromPath(filePath)` — reads file, validates `.pdf` extension, extracts text via `unpdf`
 - `parsePdfFromBuffer(buffer)` — same but from a buffer (for future HTTP API usage)
 - Uses `mergePages: true` to get a single continuous text string
 
 **`extraction-agent.ts`** — Mastra agent definition:
+
 - Temperature 0 for deterministic output
 - Model configurable via `GOOGLE_GENERATIVE_AI_MODEL`
 - Instructions tuned for: canonical skill naming ("TypeScript" not "TS"), per-role tech lists, non-overlapping experience calculation, null policy
 - Agent returns structured output matching the Zod schema
 
 **`profile-extractor.ts`** — orchestration:
+
 - Validates API key (throws descriptive error if missing)
 - Calls `pdf-parser.ts` to get raw text
 - Calls agent with the raw text
@@ -259,11 +262,13 @@ All four extraction modules follow the same pattern. The **candidate module** is
 **`prompt-builder.ts`** — the art of prompt engineering:
 
 The prompt has three layers:
+
 1. **System role** — "AscentX Career Architect — an expert career coach and senior engineering mentor"
 2. **Data sections** — candidate profile, GitHub portfolio, LinkedIn (optional), job description (optional), match scorecard (optional)
 3. **Output instructions** — verbatim section headings, word limit, citation requirements
 
 Key details:
+
 - README excerpts are truncated at 600 characters with `…`
 - GitHub repos with no README show "No description"
 - LinkedIn endorsements are used for cross-checking (flag if `topSkills` have zero endorsements)
@@ -290,19 +295,20 @@ Each extraction is wrapped in `.then()/.catch()` for stage logging. If any extra
 **`matcher.ts`** — algorithmic scoring:
 
 ```typescript
-overallScore = requiredSkillsScore * 0.45
-             + experienceScore       * 0.25
-             + techDepthScore        * 0.20
-             + preferredSkillsScore  * 0.10
+overallScore =
+    requiredSkillsScore * 0.45 +
+    experienceScore * 0.25 +
+    techDepthScore * 0.2 +
+    preferredSkillsScore * 0.1;
 ```
 
 - **Required skills** (45%): fraction of required skills found in candidate's skill set
 - **Experience** (25%): candidate years / required years, capped at 1.0
 - **Tech depth** (20%): average depth (0-3) of matched skills, normalized
-  - 0: not found in resume or repos
-  - 1: in resume only
-  - 2: in resume + 1 repo reference
-  - 3: in resume + multiple repo references
+    - 0: not found in resume or repos
+    - 1: in resume only
+    - 2: in resume + 1 repo reference
+    - 3: in resume + multiple repo references
 - **Preferred skills** (10%): fraction of preferred skills matched
 
 ### Logger (`src/logger.ts`)
@@ -328,12 +334,12 @@ Stages are tracked as the orchestrator progresses. The log file path is printed 
 
 All scripts are development/testing tools — not part of the production build. See `scripts/README.md` for detailed docs.
 
-| Script | npm command | Purpose |
-|--------|-------------|---------|
-| `analyze.ts` | `npm run analyze` | Full end-to-end analysis (goal + job modes) |
-| `github-test.ts` | `npm run github:test` | Manual GitHub API test (profile + repo subcommands) |
-| `extract-resume.ts` | `npm run resume:extract` | Test resume extraction pipeline |
-| `extract-linkedin.ts` | `npm run linkedin:extract` | Test LinkedIn extraction pipeline |
+| Script                | npm command                | Purpose                                             |
+| --------------------- | -------------------------- | --------------------------------------------------- |
+| `analyze.ts`          | `npm run analyze`          | Full end-to-end analysis (goal + job modes)         |
+| `github-test.ts`      | `npm run github:test`      | Manual GitHub API test (profile + repo subcommands) |
+| `extract-resume.ts`   | `npm run resume:extract`   | Test resume extraction pipeline                     |
+| `extract-linkedin.ts` | `npm run linkedin:extract` | Test LinkedIn extraction pipeline                   |
 
 ---
 
@@ -372,7 +378,7 @@ const { generateMock, getAgentMock } = vi.hoisted(() => {
     };
 });
 
-vi.mock('@mastra/core', () => ({
+vi.mock("@mastra/core", () => ({
     Mastra: vi.fn(() => ({ getAgent: getAgentMock })),
 }));
 ```
@@ -383,33 +389,33 @@ vi.mock('@mastra/core', () => ({
 
 See [ROADMAP.md](ROADMAP.md) for the full phase plan.
 
-| Phase | Module | Status |
-|-------|--------|--------|
-| 0 | Project scaffolding | ✅ Complete |
-| 1 | PDF parser | ✅ Complete |
-| 2 | GitHub client | ✅ Complete |
-| 3 | Candidate extraction (Mastra + Gemini) | ✅ Complete |
-| 3b | LinkedIn extraction | ✅ Complete |
-| 4 | Prompt builder | ✅ Complete |
-| 5 | Career analyzer orchestrator + tools | ✅ Complete |
-| 5b | Job description analysis + matching | ✅ Complete |
-| 6 | Output formatter | ⬜ Not started |
-| 7 | CLI entry point (commander) | ⬜ Not started |
-| 8 | End-to-end validation | ⬜ Not started |
-| 9 | LlamaParse for structured PDF parsing | 📋 Post-PoC |
-| 10 | Multi-agent experience verification | 📋 Post-PoC |
-| 11 | Vector storage for RAG-based search | 📋 Post-PoC |
+| Phase | Module                                 | Status         |
+| ----- | -------------------------------------- | -------------- |
+| 0     | Project scaffolding                    | ✅ Complete    |
+| 1     | PDF parser                             | ✅ Complete    |
+| 2     | GitHub client                          | ✅ Complete    |
+| 3     | Candidate extraction (Mastra + Gemini) | ✅ Complete    |
+| 3b    | LinkedIn extraction                    | ✅ Complete    |
+| 4     | Prompt builder                         | ✅ Complete    |
+| 5     | Career analyzer orchestrator + tools   | ✅ Complete    |
+| 5b    | Job description analysis + matching    | ✅ Complete    |
+| 6     | Output formatter                       | ⬜ Not started |
+| 7     | CLI entry point (commander)            | ⬜ Not started |
+| 8     | End-to-end validation                  | ⬜ Not started |
+| 9     | LlamaParse for structured PDF parsing  | 📋 Post-PoC    |
+| 10    | Multi-agent experience verification    | 📋 Post-PoC    |
+| 11    | Vector storage for RAG-based search    | 📋 Post-PoC    |
 
 ---
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GOOGLE_GENERATIVE_AI_API_KEY` | Yes | Gemini API key for all AI extraction and analysis |
-| `GITHUB_TOKEN` | Yes | GitHub personal access token (read-only scope) |
-| `GOOGLE_GENERATIVE_AI_MODEL` | No | Model name override (default: `gemini-2.5-flash`) |
-| `JOB_INPUT` | No | Fallback job input when `--job` flag is not provided on CLI |
+| Variable                       | Required | Description                                                 |
+| ------------------------------ | -------- | ----------------------------------------------------------- |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Yes      | Gemini API key for all AI extraction and analysis           |
+| `GITHUB_TOKEN`                 | Yes      | GitHub personal access token (read-only scope)              |
+| `GOOGLE_GENERATIVE_AI_MODEL`   | No       | Model name override (default: `gemini-2.5-flash`)           |
+| `JOB_INPUT`                    | No       | Fallback job input when `--job` flag is not provided on CLI |
 
 ---
 
@@ -426,7 +432,7 @@ Zod is the **foundation** of the project. Every piece of data from an external s
 #### Schema → Type Inference
 
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 // 1. Define the runtime schema
 export const roleSchema = z.object({
@@ -445,10 +451,12 @@ export type Role = z.infer<typeof roleSchema>;
 
 ```typescript
 // src/types/candidate/profile.ts
-const YEAR_OR_MONTH = z.string().regex(
-    /^(\d{4}(-\d{2})?|present)$/i,
-    'Use YYYY, YYYY-MM, or the literal string "present".',
-);
+const YEAR_OR_MONTH = z
+    .string()
+    .regex(
+        /^(\d{4}(-\d{2})?|present)$/i,
+        'Use YYYY, YYYY-MM, or the literal string "present".'
+    );
 ```
 
 If Gemini returns `"2025-13"` (invalid month) or `"next year"`, Zod catches it at runtime with a clear error message.
@@ -458,22 +466,23 @@ If Gemini returns `"2025-13"` (invalid month) or `"next year"`, Zod catches it a
 ```typescript
 // src/modules/candidate/profile-extractor.ts
 // Step 1: Agent returns structured output (Mastra negotiates schema with model)
-const result = await agent.generate(
-    [{ role: "user", content: resumeText }],
-    { output: candidateProfileSchema }
-);
+const result = await agent.generate([{ role: "user", content: resumeText }], {
+    output: candidateProfileSchema,
+});
 
 // Step 2: Re-parse with Zod (defense in depth)
 return candidateProfileSchema.parse(result.object);
 ```
 
 Mastra already validates the output against the schema internally. But we parse again because:
+
 - The Zod schema might have been updated between agent definition and use
 - It's a zero-cost safety net that prevents silent `undefined` propagation
 
 #### Every External Boundary Is Validated
 
 The same pattern repeats across all modules:
+
 - **GitHub API** → raw GraphQL responses validated via `github-response.ts`, then mapped to clean types validated via `github.ts`
 - **Job extraction** → `jobDescriptionSchema.parse(result.object)` in `job-extractor.ts:75`
 - **LinkedIn extraction** → same double-validation as candidate
@@ -481,16 +490,16 @@ The same pattern repeats across all modules:
 
 #### Key Zod APIs Used
 
-| API | Usage | Example |
-|-----|-------|---------|
-| `z.object({...})` | Define structured schemas | `candidateProfileSchema` |
-| `z.string().regex(...)` | Pattern validation | Date format `YYYY-MM` |
-| `z.array(z.string()).max(5)` | Bounded lists | `topSkills` cap at 5 |
-| `z.nullable()` | Optional fields | `title: z.string().nullable()` |
-| `z.enum([...])` | Fixed set of values | Seniority level in job schema |
-| `z.infer<typeof schema>` | Derive TS type | `type CandidateProfile = z.infer<...>` |
-| `schema.parse(data)` | Validate + return or throw | Double-validation in extractors |
-| `z.object({...}).describe(...)` | Add metadata | Self-documenting schemas |
+| API                             | Usage                      | Example                                |
+| ------------------------------- | -------------------------- | -------------------------------------- |
+| `z.object({...})`               | Define structured schemas  | `candidateProfileSchema`               |
+| `z.string().regex(...)`         | Pattern validation         | Date format `YYYY-MM`                  |
+| `z.array(z.string()).max(5)`    | Bounded lists              | `topSkills` cap at 5                   |
+| `z.nullable()`                  | Optional fields            | `title: z.string().nullable()`         |
+| `z.enum([...])`                 | Fixed set of values        | Seniority level in job schema          |
+| `z.infer<typeof schema>`        | Derive TS type             | `type CandidateProfile = z.infer<...>` |
+| `schema.parse(data)`            | Validate + return or throw | Double-validation in extractors        |
+| `z.object({...}).describe(...)` | Add metadata               | Self-documenting schemas               |
 
 ---
 
@@ -567,12 +576,12 @@ The `instructions` string becomes the **system prompt**. Mastra sends it to the 
 
 #### The Four Agents in This Project
 
-| Agent | File | Responsibility |
-|-------|------|---------------|
-| `candidateExtractionAgent` | `candidate/extraction-agent.ts` | Resume PDF → structured `CandidateProfile` |
-| `linkedinExtractionAgent` | `linkedin/extraction-agent.ts` | LinkedIn PDF → structured `LinkedInProfile` |
-| `jobExtractionAgent` | `job/extraction-agent.ts` | Job posting (URL or text) → structured `JobDescription` |
-| `careerAnalysisAgent` | `analyzer/analysis-agent.ts` | All data + goal → career analysis (uses tools) |
+| Agent                      | File                            | Responsibility                                          |
+| -------------------------- | ------------------------------- | ------------------------------------------------------- |
+| `candidateExtractionAgent` | `candidate/extraction-agent.ts` | Resume PDF → structured `CandidateProfile`              |
+| `linkedinExtractionAgent`  | `linkedin/extraction-agent.ts`  | LinkedIn PDF → structured `LinkedInProfile`             |
+| `jobExtractionAgent`       | `job/extraction-agent.ts`       | Job posting (URL or text) → structured `JobDescription` |
+| `careerAnalysisAgent`      | `analyzer/analysis-agent.ts`    | All data + goal → career analysis (uses tools)          |
 
 #### Structured Output — Mastra's Killer Feature
 
@@ -580,7 +589,7 @@ The `instructions` string becomes the **system prompt**. Mastra sends it to the 
 // src/modules/candidate/profile-extractor.ts
 const result = await agent.generate(
     [{ role: "user", content: resumeText }],
-    { output: candidateProfileSchema }  // ← Pass a Zod schema
+    { output: candidateProfileSchema } // ← Pass a Zod schema
 );
 ```
 
@@ -591,6 +600,7 @@ Mastra does three things when you pass `{ output: schema }`:
 3. **Validates the response** against the schema and surfaces errors immediately
 
 Without Mastra, you'd need to:
+
 - Ask for JSON in the prompt (fragile — models sometimes forget)
 - Parse the string yourself (`JSON.parse`)
 - Validate against Zod manually
@@ -604,7 +614,8 @@ Mastra does all of this in `agent.generate()`.
 // src/modules/analyzer/tools.ts
 export const fetchGithubRepoTool = createTool({
     id: "fetch_github_repo",
-    description: "Fetch full details and README for a specific GitHub repository...",
+    description:
+        "Fetch full details and README for a specific GitHub repository...",
     inputSchema: z.object({
         slug: z.string().describe('Repository slug in "owner/repo" format'),
     }),
@@ -616,6 +627,7 @@ export const fetchGithubRepoTool = createTool({
 ```
 
 A tool has four parts:
+
 - **`id`** — unique name the model uses to call it
 - **`description`** — tells the model **when** to use it (critical — the model decides based on this)
 - **`inputSchema` + `outputSchema`** — Zod schemas for runtime validation of tool I/O
@@ -631,6 +643,7 @@ tools: {
 ```
 
 When the agent is generating and realizes "I need more context about a repository the resume mentions," it:
+
 1. Pauses generation
 2. Calls `fetch_github_repo` with a slug
 3. Mastra validates the input, runs `execute`, validates the output
@@ -695,13 +708,13 @@ Let's trace one extraction end-to-end to see the layering:
 
 Each layer has one job:
 
-| Layer | Responsibility |
-|-------|---------------|
-| **Zod** | Runtime validation + TypeScript type inference |
-| **Vercel AI SDK** | Model-agnostic API call (swap provider by changing one import) |
-| **Mastra** | Agent lifecycle, tool binding, structured output negotiation, observability |
-| **Application code** | Orchestration, error handling, logging |
+| Layer                | Responsibility                                                              |
+| -------------------- | --------------------------------------------------------------------------- |
+| **Zod**              | Runtime validation + TypeScript type inference                              |
+| **Vercel AI SDK**    | Model-agnostic API call (swap provider by changing one import)              |
+| **Mastra**           | Agent lifecycle, tool binding, structured output negotiation, observability |
+| **Application code** | Orchestration, error handling, logging                                      |
 
 ---
 
-*Built with TypeScript, Mastra, Gemini, and Zod.*
+_Built with TypeScript, Mastra, Gemini, and Zod._

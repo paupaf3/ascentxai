@@ -1,12 +1,12 @@
-import 'dotenv/config';
-import path from 'node:path';
+import "dotenv/config";
+import path from "node:path";
 
-import { extractCandidateProfile } from '../src/modules/candidate/profile-extractor';
+import { extractCandidateProfile } from "../src/modules/candidate/profile-extractor";
 
 async function main(): Promise<void> {
     const [, , rawPath] = process.argv;
     if (!rawPath) {
-        console.error('Usage: npm run resume:extract -- <path-to-resume.pdf>');
+        console.error("Usage: npm run resume:extract -- <path-to-resume.pdf>");
         process.exit(1);
     }
 
@@ -16,6 +16,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-    console.error('Resume extraction failed:', error);
+    console.error("Resume extraction failed:", error);
     process.exit(1);
 });

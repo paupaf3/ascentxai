@@ -8,13 +8,11 @@ const { generateMock, getAgentMock, MockRunLogger } = vi.hoisted(() => {
     const loggerInstance = {
         runId: "test-run",
         logFile: "/tmp/test.json",
-        startStage: vi
-            .fn()
-            .mockReturnValue({
-                name: "stage",
-                startedAt: "",
-                status: "running",
-            }),
+        startStage: vi.fn().mockReturnValue({
+            name: "stage",
+            startedAt: "",
+            status: "running",
+        }),
         endStage: vi.fn(),
         failStage: vi.fn(),
         finish: vi.fn(),

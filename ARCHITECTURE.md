@@ -106,32 +106,32 @@ ascentxai/
 
 ## Implementation Status
 
-| Module                              | Status      |
-| ----------------------------------- | ----------- |
-| `candidate/pdf-parser.ts`           | ✅ Complete |
-| `candidate/extraction-agent.ts`     | ✅ Complete |
-| `candidate/profile-extractor.ts`    | ✅ Complete |
-| `types/candidate/profile.ts`        | ✅ Complete |
-| `github/github-client.ts`           | ✅ Complete |
-| `github/github-queries.ts`          | ✅ Complete |
-| `github/github-mapper.ts`           | ✅ Complete |
-| `types/github/github.ts`            | ✅ Complete |
-| `types/github/github-response.ts`   | ✅ Complete |
-| `linkedin/extraction-agent.ts`      | ✅ Complete |
-| `linkedin/profile-extractor.ts`     | ✅ Complete |
-| `types/linkedin/linkedin-profile.ts`| ✅ Complete |
-| `job/extraction-agent.ts`           | ✅ Complete |
-| `job/job-extractor.ts`              | ✅ Complete |
-| `job/matcher.ts`                    | ✅ Complete |
-| `types/job/job-description.ts`      | ✅ Complete |
-| `types/analysis-target.ts`          | ✅ Complete |
-| `logger.ts`                         | ✅ Complete |
-| `mastra.ts`                         | ✅ Complete |
-| `analyzer/tools.ts`                 | ✅ Complete |
-| `analyzer/prompt-builder.ts`        | ✅ Complete |
-| `analyzer/career-analyzer.ts`       | ✅ Complete |
-| `output/formatter.ts`               | ⬜ Planned  |
-| `cli/index.ts`                      | ⬜ Planned  |
+| Module                               | Status      |
+| ------------------------------------ | ----------- |
+| `candidate/pdf-parser.ts`            | ✅ Complete |
+| `candidate/extraction-agent.ts`      | ✅ Complete |
+| `candidate/profile-extractor.ts`     | ✅ Complete |
+| `types/candidate/profile.ts`         | ✅ Complete |
+| `github/github-client.ts`            | ✅ Complete |
+| `github/github-queries.ts`           | ✅ Complete |
+| `github/github-mapper.ts`            | ✅ Complete |
+| `types/github/github.ts`             | ✅ Complete |
+| `types/github/github-response.ts`    | ✅ Complete |
+| `linkedin/extraction-agent.ts`       | ✅ Complete |
+| `linkedin/profile-extractor.ts`      | ✅ Complete |
+| `types/linkedin/linkedin-profile.ts` | ✅ Complete |
+| `job/extraction-agent.ts`            | ✅ Complete |
+| `job/job-extractor.ts`               | ✅ Complete |
+| `job/matcher.ts`                     | ✅ Complete |
+| `types/job/job-description.ts`       | ✅ Complete |
+| `types/analysis-target.ts`           | ✅ Complete |
+| `logger.ts`                          | ✅ Complete |
+| `mastra.ts`                          | ✅ Complete |
+| `analyzer/tools.ts`                  | ✅ Complete |
+| `analyzer/prompt-builder.ts`         | ✅ Complete |
+| `analyzer/career-analyzer.ts`        | ✅ Complete |
+| `output/formatter.ts`                | ⬜ Planned  |
+| `cli/index.ts`                       | ⬜ Planned  |
 
 ---
 
@@ -276,7 +276,10 @@ only exposed via GraphQL.
 async function fetchProfile(username: string): Promise<GithubProfile>;
 async function fetchRepo(owner: string, repo: string): Promise<GithubRepo>;
 async function fetchRepoBySlug(slug: string): Promise<GithubRepo>; // parses "owner/repo"
-async function fetchTopRepositories(username: string, limit?: number): Promise<GithubRepo[]>;
+async function fetchTopRepositories(
+    username: string,
+    limit?: number
+): Promise<GithubRepo[]>;
 ```
 
 **Types (Zod-inferred, from `src/types/github/github.ts`):**
@@ -448,7 +451,7 @@ function buildPrompt(
     target: AnalysisTarget,
     linkedinProfile?: LinkedInProfile | null,
     jobDescription?: JobDescription | null,
-    matchResult?: MatchResult | null,
+    matchResult?: MatchResult | null
 ): string;
 ```
 
@@ -491,12 +494,12 @@ async function analyze(
 
 1. Creates a `RunLogger` instance for the run.
 2. Runs in parallel via `Promise.all`:
-   - `extractCandidateProfile({ filePath: resumePath })` → `profile`
-   - `fetchProfile(githubUsername)` → `portfolio`
-   - `extractLinkedInProfile({ filePath: linkedinPath })` → `linkedinProfile`
-     (or `null` if `linkedinPath` is not provided)
-   - `extractJobDescription(target.jobInput)` → `jobDescription`
-     (only if `target.mode === "job"`)
+    - `extractCandidateProfile({ filePath: resumePath })` → `profile`
+    - `fetchProfile(githubUsername)` → `portfolio`
+    - `extractLinkedInProfile({ filePath: linkedinPath })` → `linkedinProfile`
+      (or `null` if `linkedinPath` is not provided)
+    - `extractJobDescription(target.jobInput)` → `jobDescription`
+      (only if `target.mode === "job"`)
 3. If job mode: calls `computeMatch(profile, portfolio, jobDescription)` → `matchResult`
 4. Calls `buildPrompt(profile, portfolio, target, linkedinProfile, jobDescription, matchResult)` → `prompt`
 5. Runs `careerAnalysisAgent` with the prompt → `analysis: string`
@@ -579,20 +582,20 @@ CandidateProfile | LinkedInProfile (structured JSON)
 
 ### Key files
 
-| File                                           | Responsibility                              |
-| ---------------------------------------------- | ------------------------------------------- |
-| `src/types/candidate/profile.ts`               | Zod schema + inferred `CandidateProfile`    |
-| `src/types/linkedin/linkedin-profile.ts`       | Zod schema + inferred `LinkedInProfile`     |
-| `src/modules/candidate/pdf-parser.ts`          | Shared PDF → text adapter (path or buffer)  |
-| `src/modules/candidate/extraction-agent.ts`    | Mastra agent for resume extraction          |
-| `src/modules/linkedin/extraction-agent.ts`     | Mastra agent for LinkedIn PDF extraction    |
-| `src/modules/analyzer/tools.ts`                | Agent tools wrapping GitHub client functions |
-| `src/modules/analyzer/analysis-agent.ts`       | Analysis agent with optional GitHub tools   |
-| `src/mastra.ts`                                | Central `Mastra` instance registration      |
-| `src/modules/candidate/profile-extractor.ts`   | Public service: resume PDF → validated JSON |
-| `src/modules/linkedin/profile-extractor.ts`    | Public service: LinkedIn PDF → validated JSON |
-| `scripts/extract-resume.ts`                    | Manual harness for resume extraction        |
-| `scripts/extract-linkedin.ts`                  | Manual harness for LinkedIn extraction      |
+| File                                         | Responsibility                                |
+| -------------------------------------------- | --------------------------------------------- |
+| `src/types/candidate/profile.ts`             | Zod schema + inferred `CandidateProfile`      |
+| `src/types/linkedin/linkedin-profile.ts`     | Zod schema + inferred `LinkedInProfile`       |
+| `src/modules/candidate/pdf-parser.ts`        | Shared PDF → text adapter (path or buffer)    |
+| `src/modules/candidate/extraction-agent.ts`  | Mastra agent for resume extraction            |
+| `src/modules/linkedin/extraction-agent.ts`   | Mastra agent for LinkedIn PDF extraction      |
+| `src/modules/analyzer/tools.ts`              | Agent tools wrapping GitHub client functions  |
+| `src/modules/analyzer/analysis-agent.ts`     | Analysis agent with optional GitHub tools     |
+| `src/mastra.ts`                              | Central `Mastra` instance registration        |
+| `src/modules/candidate/profile-extractor.ts` | Public service: resume PDF → validated JSON   |
+| `src/modules/linkedin/profile-extractor.ts`  | Public service: LinkedIn PDF → validated JSON |
+| `scripts/extract-resume.ts`                  | Manual harness for resume extraction          |
+| `scripts/extract-linkedin.ts`                | Manual harness for LinkedIn extraction        |
 
 ---
 
@@ -662,18 +665,18 @@ Each module throws typed, descriptive errors. The CLI entry point (`cli/index.ts
 is the single catch boundary — it handles all errors, prints a human-readable
 message to `stderr`, and exits with a non-zero code.
 
-| Error origin              | Example message                                                      |
-| ------------------------- | -------------------------------------------------------------------- |
-| `pdf-parser`              | `Expected a .pdf file, received: ./resume.docx`                      |
-| `pdf-parser`              | `File not found: ./missing.pdf`                                      |
-| `github-client`           | `GitHub user "johndoe" not found`                                    |
-| `github-client`           | `GitHub API error: ...`                                              |
-| `profile-extractor`       | `GOOGLE_GENERATIVE_AI_API_KEY is not set. Add it to your .env file.` |
-| `profile-extractor`       | Zod validation error when the agent returns a malformed profile      |
-| `linkedin/profile-extractor` | Same API key and Zod errors as candidate extractor               |
-| `job/job-extractor`       | `Failed to fetch job posting at <url>: HTTP 404`                     |
-| `job/job-extractor`       | Same `GOOGLE_GENERATIVE_AI_API_KEY` and Zod errors as other pipelines |
-| `career-analyzer`         | `Career analysis agent returned an empty response.`                  |
+| Error origin                 | Example message                                                       |
+| ---------------------------- | --------------------------------------------------------------------- |
+| `pdf-parser`                 | `Expected a .pdf file, received: ./resume.docx`                       |
+| `pdf-parser`                 | `File not found: ./missing.pdf`                                       |
+| `github-client`              | `GitHub user "johndoe" not found`                                     |
+| `github-client`              | `GitHub API error: ...`                                               |
+| `profile-extractor`          | `GOOGLE_GENERATIVE_AI_API_KEY is not set. Add it to your .env file.`  |
+| `profile-extractor`          | Zod validation error when the agent returns a malformed profile       |
+| `linkedin/profile-extractor` | Same API key and Zod errors as candidate extractor                    |
+| `job/job-extractor`          | `Failed to fetch job posting at <url>: HTTP 404`                      |
+| `job/job-extractor`          | Same `GOOGLE_GENERATIVE_AI_API_KEY` and Zod errors as other pipelines |
+| `career-analyzer`            | `Career analysis agent returned an empty response.`                   |
 
 ---
 
