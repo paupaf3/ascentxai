@@ -46,9 +46,9 @@ describe("extractJobDescription", () => {
     it("throws a descriptive error when the API key is missing", async () => {
         delete process.env.NIM_API_KEY;
 
-        await expect(
-            extractJobDescription("some job text")
-        ).rejects.toThrow(/NIM_API_KEY/);
+        await expect(extractJobDescription("some job text")).rejects.toThrow(
+            /NIM_API_KEY/
+        );
 
         expect(generateMock).not.toHaveBeenCalled();
     });
@@ -97,9 +97,7 @@ describe("extractJobDescription", () => {
             },
         });
 
-        await expect(
-            extractJobDescription("some job")
-        ).rejects.toThrow();
+        await expect(extractJobDescription("some job")).rejects.toThrow();
     });
 
     it("detects http:// URLs", async () => {
@@ -187,7 +185,7 @@ describe("extractJobDescription", () => {
         await extractJobDescription("https://example.com/job");
 
         const messages = generateMock.mock.calls[0][0];
-        expect(messages[0].content).toContain("Senior&Staff <Engineer> \"Lead\"");
+        expect(messages[0].content).toContain('Senior&Staff <Engineer> "Lead"');
         expect(messages[0].content).not.toContain("&amp;");
         expect(messages[0].content).not.toContain("&lt;");
     });

@@ -242,7 +242,9 @@ describe("RunLogger", () => {
             githubUsername: "user",
             target: TARGET,
         });
-        const initialWrites = fsCalls.filter((c) => "writeFileSync" in c).length;
+        const initialWrites = fsCalls.filter(
+            (c) => "writeFileSync" in c
+        ).length;
 
         fsCalls.length = 0;
         logger.startStage("s1");

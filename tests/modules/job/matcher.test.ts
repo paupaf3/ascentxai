@@ -59,10 +59,7 @@ describe("computeMatch", () => {
                     ...fullCandidateFixture.skills.cloudAndInfra,
                     "AWS",
                 ],
-                tools: [
-                    ...fullCandidateFixture.skills.tools,
-                    "Kubernetes",
-                ],
+                tools: [...fullCandidateFixture.skills.tools, "Kubernetes"],
             },
             topSkills: ["TypeScript", "PostgreSQL", "AWS", "Kubernetes", "Go"],
             totalYearsOfExperience: 6,
@@ -76,8 +73,16 @@ describe("computeMatch", () => {
         const portfolio: GithubProfile = {
             ...profileFixture,
             pinnedRepos: [
-                { ...repoFixture, name: "proj-a", primaryLanguage: "TypeScript" },
-                { ...repoFixture, name: "proj-b", primaryLanguage: "TypeScript" },
+                {
+                    ...repoFixture,
+                    name: "proj-a",
+                    primaryLanguage: "TypeScript",
+                },
+                {
+                    ...repoFixture,
+                    name: "proj-b",
+                    primaryLanguage: "TypeScript",
+                },
             ],
         };
 
@@ -342,7 +347,9 @@ describe("computeMatch — tech depth scoring", () => {
         );
 
         expect(result.missingRequired).toContain("Rust");
-        expect(result.matchedRequired.find((m) => m.skill === "Rust")).toBeUndefined();
+        expect(
+            result.matchedRequired.find((m) => m.skill === "Rust")
+        ).toBeUndefined();
     });
 
     it("assigns depth 1 when skill is in resume but not in repos", () => {
@@ -509,15 +516,16 @@ describe("computeMatch — tech depth scoring", () => {
         const result = computeMatch(candidate, portfolio, job);
 
         const tsDepth =
-            result.matchedRequired.find(
-                (m) => m.skill === "TypeScript"
-            )?.depth ?? 0;
+            result.matchedRequired.find((m) => m.skill === "TypeScript")
+                ?.depth ?? 0;
         const pyDepth =
-            result.matchedRequired.find((m) => m.skill === "Python")?.depth ?? 0;
+            result.matchedRequired.find((m) => m.skill === "Python")?.depth ??
+            0;
         const awsDepth =
             result.matchedRequired.find((m) => m.skill === "AWS")?.depth ?? 0;
         const k8sDepth =
-            result.matchedRequired.find((m) => m.skill === "Kubernetes")?.depth ?? 0;
+            result.matchedRequired.find((m) => m.skill === "Kubernetes")
+                ?.depth ?? 0;
 
         const depths = [tsDepth, pyDepth, awsDepth, k8sDepth];
         const expectedAvg =
