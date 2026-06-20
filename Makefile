@@ -61,3 +61,8 @@ help:
 	@echo '  help             Show this help'
 	@echo ''
 	@echo 'Usage: make <target> [ARGS="..."]'
+
+demo-jd:
+	npm run analyze -- './2026 CV Pau Agustí Fernandez.pdf' paupaf3 --job "$$(cat ./ai-engineer-jd.txt)"
+demo-link:
+	npm run analyze -- './2026 CV Pau Agustí Fernandez.pdf' paupaf3 --job "$$(cat ./ai-engineer-link.txt)"
