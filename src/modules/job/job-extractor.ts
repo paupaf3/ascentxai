@@ -9,39 +9,24 @@ function isUrl(input: string): boolean {
     return /^https?:\/\//i.test(input.trim());
 }
 
-function stripHtml(html: string): string {
-    return html
-        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-        .replace(/<[^>]+>/g, " ")
-        .replace(/&nbsp;/g, " ")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/\s{2,}/g, " ")
-        .trim();
-}
-
 async function fetchJobText(url: string): Promise<string> {
-    const response = await fetch(url, {
+    const jinaUrl = `https://r.jina.ai/${encodeURI(url)}`;
+
+    const response = await fetch(jinaUrl, {
         headers: {
             "User-Agent":
                 "Mozilla/5.0 (compatible; AscentX/1.0; +https://github.com/paupaf3/ascentxai)",
         },
+        signal: AbortSignal.timeout(30_000),
     });
 
     if (!response.ok) {
         throw new Error(
-            `Failed to fetch job posting at ${url}: HTTP ${response.status}`
+            `Failed to fetch job posting at ${url}: Jina returned HTTP ${response.status}`
         );
     }
 
-    const contentType = response.headers.get("content-type") ?? "";
-    const raw = await response.text();
-
-    return contentType.includes("html") ? stripHtml(raw) : raw;
+    return response.text();
 }
 
 export async function extractJobDescription(
@@ -58,6 +43,7 @@ export async function extractJobDescription(
 
     const text = isUrl(input) ? await fetchJobText(input) : input;
     logger?.logData("jobFetchedText", {
+        via: "jina",
         length: text.length,
         preview: `${text.slice(0, 1000)}${text.length > 1000 ? "..." : ""}`,
     });

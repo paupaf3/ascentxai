@@ -66,13 +66,12 @@ describe("extractJobDescription", () => {
         expect(result).toEqual(validJobOutput);
     });
 
-    it("passes URL input to fetch and delivers stripped text to the agent", async () => {
+    it("passes URL input to fetch via Jina proxy", async () => {
         const mockFetch = vi.fn().mockResolvedValue({
             ok: true,
-            headers: { get: () => "text/html" },
             text: () =>
                 Promise.resolve(
-                    "<html><h1>Senior Engineer</h1><p>Build APIs with TypeScript</p></html>"
+                    "Senior Engineer\nBuild APIs with TypeScript"
                 ),
         });
         vi.stubGlobal("fetch", mockFetch);
@@ -82,8 +81,11 @@ describe("extractJobDescription", () => {
         );
 
         expect(mockFetch).toHaveBeenCalledWith(
-            "https://example.com/jobs/123",
-            expect.objectContaining({ headers: expect.anything() })
+            "https://r.jina.ai/https://example.com/jobs/123",
+            expect.objectContaining({
+                headers: expect.anything(),
+                signal: expect.any(AbortSignal),
+            })
         );
         expect(result).toEqual(validJobOutput);
     });
@@ -103,7 +105,6 @@ describe("extractJobDescription", () => {
     it("detects http:// URLs", async () => {
         const mockFetch = vi.fn().mockResolvedValue({
             ok: true,
-            headers: { get: () => "text/plain" },
             text: () => Promise.resolve("Senior Engineer needed"),
         });
         vi.stubGlobal("fetch", mockFetch);
@@ -111,15 +112,17 @@ describe("extractJobDescription", () => {
         await extractJobDescription("http://example.com/job");
 
         expect(mockFetch).toHaveBeenCalledWith(
-            "http://example.com/job",
-            expect.anything()
+            "https://r.jina.ai/http://example.com/job",
+            expect.objectContaining({
+                headers: expect.anything(),
+                signal: expect.any(AbortSignal),
+            })
         );
     });
 
     it("detects https:// URLs", async () => {
         const mockFetch = vi.fn().mockResolvedValue({
             ok: true,
-            headers: { get: () => "text/plain" },
             text: () => Promise.resolve("Senior Engineer needed"),
         });
         vi.stubGlobal("fetch", mockFetch);
@@ -127,81 +130,38 @@ describe("extractJobDescription", () => {
         await extractJobDescription("https://careers.example.com/posting/42");
 
         expect(mockFetch).toHaveBeenCalledWith(
-            "https://careers.example.com/posting/42",
-            expect.anything()
+            "https://r.jina.ai/https://careers.example.com/posting/42",
+            expect.objectContaining({
+                headers: expect.anything(),
+                signal: expect.any(AbortSignal),
+            })
         );
     });
 
-    it("strips HTML tags from fetched content", async () => {
+    it("passes Jina markdown content directly to the agent", async () => {
         const mockFetch = vi.fn().mockResolvedValue({
             ok: true,
-            headers: { get: () => "text/html" },
-            text: () =>
-                Promise.resolve(
-                    "<html><body><div>Hello <b>World</b></div><p>Test</p></body></html>"
-                ),
+            text: () => Promise.resolve("Hello World Test"),
         });
         vi.stubGlobal("fetch", mockFetch);
 
         await extractJobDescription("https://example.com/job");
 
         const messages = generateMock.mock.calls[0][0];
-        expect(messages[0].content).not.toContain("<b>");
-        expect(messages[0].content).not.toContain("<div>");
-        expect(messages[0].content).not.toContain("</html>");
         expect(messages[0].content).toContain("Hello World Test");
     });
 
-    it("removes <style> and <script> blocks before stripping tags", async () => {
-        const mockFetch = vi.fn().mockResolvedValue({
-            ok: true,
-            headers: { get: () => "text/html" },
-            text: () =>
-                Promise.resolve(
-                    `<html><style>.body{color:red}</style><script>alert('x')</script><body>Visible</body></html>`
-                ),
-        });
-        vi.stubGlobal("fetch", mockFetch);
-
-        await extractJobDescription("https://example.com/job");
-
-        const messages = generateMock.mock.calls[0][0];
-        expect(messages[0].content).not.toContain("color:red");
-        expect(messages[0].content).not.toContain("alert");
-        expect(messages[0].content).toContain("Visible");
-    });
-
-    it("replaces HTML entities with their characters", async () => {
-        const mockFetch = vi.fn().mockResolvedValue({
-            ok: true,
-            headers: { get: () => "text/html" },
-            text: () =>
-                Promise.resolve(
-                    "<p>Senior&amp;Staff &lt;Engineer&gt; &quot;Lead&quot;</p>"
-                ),
-        });
-        vi.stubGlobal("fetch", mockFetch);
-
-        await extractJobDescription("https://example.com/job");
-
-        const messages = generateMock.mock.calls[0][0];
-        expect(messages[0].content).toContain('Senior&Staff <Engineer> "Lead"');
-        expect(messages[0].content).not.toContain("&amp;");
-        expect(messages[0].content).not.toContain("&lt;");
-    });
-
-    it("throws when the HTTP response is not ok", async () => {
+    it("throws when Jina returns a non-ok HTTP response", async () => {
         const mockFetch = vi.fn().mockResolvedValue({
             ok: false,
             status: 404,
-            headers: { get: () => "text/html" },
             text: () => Promise.resolve("Not Found"),
         });
         vi.stubGlobal("fetch", mockFetch);
 
         await expect(
             extractJobDescription("https://example.com/missing")
-        ).rejects.toThrow(/Failed to fetch.*404/);
+        ).rejects.toThrow(/Jina returned HTTP 404/);
     });
 
     it("includes the job posting text between BEGIN/END markers", async () => {
