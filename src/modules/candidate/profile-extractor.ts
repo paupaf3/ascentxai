@@ -1,3 +1,4 @@
+import type { RunLogger } from "../../logger";
 import { mastra } from "../../mastra";
 import {
     candidateProfileSchema,
@@ -31,7 +32,8 @@ function assertApiKey(): void {
  * in-memory buffer so the same service powers CLI and HTTP usage.
  */
 export async function extractCandidateProfile(
-    input: ExtractionInput
+    input: ExtractionInput,
+    logger?: RunLogger
 ): Promise<CandidateProfile> {
     assertApiKey();
 
@@ -40,28 +42,37 @@ export async function extractCandidateProfile(
             ? await parsePdfFromPath(input.filePath)
             : await parsePdfFromBuffer(input.buffer);
 
+    logger?.logData("resumeText", {
+        filePath: "filePath" in input ? input.filePath : "<buffer>",
+        length: resumeText.length,
+        preview: `${resumeText.slice(0, 2000)}${resumeText.length > 2000 ? "..." : ""}`,
+    });
+
     const agent = mastra.getAgent("candidateExtractionAgent");
 
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
+    const userMessage = [
+        `Today's date is ${today}. Use this as the reference date for all date calculations and for determining whether a role is current.`,
+        "Extract the candidate profile from the resume text below.",
+        "Return strict JSON that matches the provided schema.",
+        "---BEGIN RESUME---",
+        resumeText,
+        "---END RESUME---",
+    ].join("\n");
+
+    logger?.logData("candidateExtractionPrompt", {
+        content: `${userMessage.slice(0, 2000)}${userMessage.length > 2000 ? "..." : ""}`,
+    });
+
     const result = await agent.generate(
-        [
-            {
-                role: "user",
-                content: [
-                    `Today's date is ${today}. Use this as the reference date for all date calculations and for determining whether a role is current.`,
-                    "Extract the candidate profile from the resume text below.",
-                    "Return strict JSON that matches the provided schema.",
-                    "---BEGIN RESUME---",
-                    resumeText,
-                    "---END RESUME---",
-                ].join("\n"),
-            },
-        ],
+        [{ role: "user", content: userMessage }],
         {
             output: candidateProfileSchema,
         }
     );
+
+    logger?.logData("candidateExtractionRawResponse", result.object);
 
     return candidateProfileSchema.parse(result.object);
 }

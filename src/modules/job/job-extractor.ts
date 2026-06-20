@@ -1,3 +1,4 @@
+import type { RunLogger } from "../../logger";
 import { mastra } from "../../mastra";
 import {
     jobDescriptionSchema,
@@ -44,7 +45,8 @@ async function fetchJobText(url: string): Promise<string> {
 }
 
 export async function extractJobDescription(
-    input: string
+    input: string,
+    logger?: RunLogger
 ): Promise<JobDescription> {
     if (!process.env.NIM_API_KEY) {
         throw new Error(
@@ -52,25 +54,35 @@ export async function extractJobDescription(
         );
     }
 
+    logger?.logData("jobInput", isUrl(input) ? input : "<inline text>");
+
     const text = isUrl(input) ? await fetchJobText(input) : input;
+    logger?.logData("jobFetchedText", {
+        length: text.length,
+        preview: `${text.slice(0, 1000)}${text.length > 1000 ? "..." : ""}`,
+    });
 
     const agent = mastra.getAgent("jobExtractionAgent");
 
+    const userMessage = [
+        "Extract the job description data from the posting text below.",
+        "Return strict JSON that matches the provided schema.",
+        "---BEGIN JOB POSTING---",
+        text,
+        "---END JOB POSTING---",
+    ].join("\n");
+
+    logger?.logData("jobExtractionPrompt", {
+        role: "user",
+        content: `${userMessage.slice(0, 2000)}${userMessage.length > 2000 ? "..." : ""}`,
+    });
+
     const result = await agent.generate(
-        [
-            {
-                role: "user",
-                content: [
-                    "Extract the job description data from the posting text below.",
-                    "Return strict JSON that matches the provided schema.",
-                    "---BEGIN JOB POSTING---",
-                    text,
-                    "---END JOB POSTING---",
-                ].join("\n"),
-            },
-        ],
+        [{ role: "user", content: userMessage }],
         { output: jobDescriptionSchema }
     );
+
+    logger?.logData("jobExtractionRawResponse", result.object);
 
     return jobDescriptionSchema.parse(result.object);
 }

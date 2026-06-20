@@ -42,6 +42,12 @@ clean:
 
 check: typecheck format test
 
+demo-jd:
+	npm run analyze -- './2026 CV Pau Agustí Fernandez.pdf' paupaf3 --job "$$(cat ./ai-engineer-jd.txt)"
+
+demo-link:
+	npm run analyze -- './2026 CV Pau Agustí Fernandez.pdf' paupaf3 --job "$$(cat ./ai-engineer-link.txt)"
+
 help:
 	@echo 'AscentX.ai — available targets:'
 	@echo ''
@@ -59,10 +65,7 @@ help:
 	@echo '  clean            Remove logs/ and coverage/'
 	@echo '  check            Run typecheck + format + test (pre-commit gate)'
 	@echo '  help             Show this help'
+	@echo '  demo-jd          Run demo with a hardcoded job description (files may be created!)'
+	@echo '  demo-link        Run demo with a link job description (files may be created!)'
 	@echo ''
 	@echo 'Usage: make <target> [ARGS="..."]'
-
-demo-jd:
-	npm run analyze -- './2026 CV Pau Agustí Fernandez.pdf' paupaf3 --job "$$(cat ./ai-engineer-jd.txt)"
-demo-link:
-	npm run analyze -- './2026 CV Pau Agustí Fernandez.pdf' paupaf3 --job "$$(cat ./ai-engineer-link.txt)"

@@ -1,3 +1,4 @@
+import type { RunLogger } from "../../logger";
 import { mastra } from "../../mastra";
 import {
     linkedinProfileSchema,
@@ -31,7 +32,8 @@ function assertApiKey(): void {
  * LinkedIn PDF export is a standard PDF — only the prompt and schema differ.
  */
 export async function extractLinkedInProfile(
-    input: LinkedInExtractionInput
+    input: LinkedInExtractionInput,
+    logger?: RunLogger
 ): Promise<LinkedInProfile> {
     assertApiKey();
 
@@ -40,28 +42,37 @@ export async function extractLinkedInProfile(
             ? await parsePdfFromPath(input.filePath)
             : await parsePdfFromBuffer(input.buffer);
 
+    logger?.logData("linkedinText", {
+        filePath: "filePath" in input ? input.filePath : "<buffer>",
+        length: pdfText.length,
+        preview: `${pdfText.slice(0, 2000)}${pdfText.length > 2000 ? "..." : ""}`,
+    });
+
     const agent = mastra.getAgent("linkedinExtractionAgent");
 
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
+    const userMessage = [
+        `Today's date is ${today}. Use this as the reference date for all date calculations and for determining whether a role is current.`,
+        "Extract the LinkedIn profile data from the PDF text below.",
+        "Return strict JSON that matches the provided schema.",
+        "---BEGIN LINKEDIN PDF---",
+        pdfText,
+        "---END LINKEDIN PDF---",
+    ].join("\n");
+
+    logger?.logData("linkedinExtractionPrompt", {
+        content: `${userMessage.slice(0, 2000)}${userMessage.length > 2000 ? "..." : ""}`,
+    });
+
     const result = await agent.generate(
-        [
-            {
-                role: "user",
-                content: [
-                    `Today's date is ${today}. Use this as the reference date for all date calculations and for determining whether a role is current.`,
-                    "Extract the LinkedIn profile data from the PDF text below.",
-                    "Return strict JSON that matches the provided schema.",
-                    "---BEGIN LINKEDIN PDF---",
-                    pdfText,
-                    "---END LINKEDIN PDF---",
-                ].join("\n"),
-            },
-        ],
+        [{ role: "user", content: userMessage }],
         {
             output: linkedinProfileSchema,
         }
     );
+
+    logger?.logData("linkedinExtractionRawResponse", result.object);
 
     return linkedinProfileSchema.parse(result.object);
 }

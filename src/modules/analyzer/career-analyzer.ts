@@ -51,7 +51,7 @@ export async function analyze(
                 : null;
 
         const linkedinPromise: Promise<LinkedInProfile | null> = linkedinPath
-            ? extractLinkedInProfile({ filePath: linkedinPath })
+            ? extractLinkedInProfile({ filePath: linkedinPath }, logger)
                   .then((result) => {
                       logger.endStage(linkedinStage!, {
                           name: result.fullName,
@@ -67,7 +67,7 @@ export async function analyze(
 
         const jobPromise: Promise<JobDescription | null> =
             target.mode === "job"
-                ? extractJobDescription(target.jobInput)
+                ? extractJobDescription(target.jobInput, logger)
                       .then((result) => {
                           logger.endStage(jobStage!, {
                               title: result.title,
@@ -75,6 +75,8 @@ export async function analyze(
                               requiredSkillsCount: result.requiredSkills.length,
                               preferredSkillsCount:
                                   result.preferredSkills.length,
+                              domain: result.domain,
+                              seniorityLevel: result.seniorityLevel,
                           });
                           return result;
                       })
@@ -86,7 +88,10 @@ export async function analyze(
 
         const [profile, portfolio, linkedinProfile, jobDescription] =
             await Promise.all([
-                extractCandidateProfile({ filePath: resumePath })
+                extractCandidateProfile(
+                    { filePath: resumePath },
+                    logger
+                )
                     .then((result) => {
                         logger.endStage(resumeStage, {
                             candidateName: result.fullName,
@@ -139,12 +144,18 @@ export async function analyze(
         );
         logger.endStage(promptStage, { promptLength: prompt.length });
 
-        const analysisStage = logger.startStage("agent_analysis", {
-            model:
-                process.env.ANALYSIS_MODEL?.trim() ??
-                process.env.EXTRACTION_MODEL?.trim() ??
-                "nvidia/llama-3.3-nemotron-super-49b-v1",
+        logger.logData("analysisPrompt", {
+            mode: target.mode,
+            length: prompt.length,
+            preview: `${prompt.slice(0, 3000)}${prompt.length > 3000 ? "..." : ""}`,
         });
+
+        const model =
+            process.env.ANALYSIS_MODEL?.trim() ??
+            process.env.EXTRACTION_MODEL?.trim() ??
+            "nvidia/llama-3.3-nemotron-super-49b-v1";
+
+        const analysisStage = logger.startStage("agent_analysis", { model });
 
         const agent = mastra.getAgent("careerAnalysisAgent");
         const result = await agent.generate([
@@ -162,7 +173,24 @@ export async function analyze(
             );
         }
 
-        logger.endStage(analysisStage, { outputLength: result.text.length });
+        const usage = result.usage
+            ? {
+                  promptTokens: result.usage.promptTokens,
+                  completionTokens: result.usage.completionTokens,
+                  totalTokens: result.usage.totalTokens,
+              }
+            : undefined;
+
+        logger.logData("analysisRawResponse", {
+            length: result.text.length,
+            preview: `${result.text.slice(0, 2000)}${result.text.length > 2000 ? "..." : ""}`,
+            usage,
+        });
+
+        logger.endStage(analysisStage, {
+            outputLength: result.text.length,
+            ...(usage && { tokenUsage: usage }),
+        });
         logger.finish(result.text.length);
 
         return result.text;

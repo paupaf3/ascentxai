@@ -17,6 +17,7 @@ const { generateMock, getAgentMock, MockRunLogger } = vi.hoisted(() => {
         failStage: vi.fn(),
         finish: vi.fn(),
         fail: vi.fn(),
+        logData: vi.fn(),
     };
     return {
         generateMock: generate,
@@ -81,9 +82,10 @@ describe("analyze", () => {
     it("calls extractCandidateProfile and fetchProfile in parallel", async () => {
         await analyze("/tmp/resume.pdf", "testuser", TARGET_GOAL, "");
 
-        expect(mockedExtract).toHaveBeenCalledWith({
-            filePath: "/tmp/resume.pdf",
-        });
+        expect(mockedExtract).toHaveBeenCalledWith(
+            { filePath: "/tmp/resume.pdf" },
+            expect.any(Object)
+        );
         expect(mockedFetch).toHaveBeenCalledWith("testuser");
     });
 
@@ -109,9 +111,10 @@ describe("analyze", () => {
             "/tmp/linkedin.pdf"
         );
 
-        expect(mockedExtractLinkedIn).toHaveBeenCalledWith({
-            filePath: "/tmp/linkedin.pdf",
-        });
+        expect(mockedExtractLinkedIn).toHaveBeenCalledWith(
+            { filePath: "/tmp/linkedin.pdf" },
+            expect.any(Object)
+        );
         expect(mockedBuildPrompt).toHaveBeenCalledWith(
             fullCandidateFixture,
             profileFixture,

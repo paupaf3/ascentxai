@@ -29,6 +29,7 @@ interface RunLog {
         linkedinPath?: string;
     };
     stages: StageLog[];
+    data?: Record<string, unknown>;
     outputLength?: number;
     error?: string;
 }
@@ -108,6 +109,12 @@ export class RunLogger {
         this.log.durationMs = Date.parse(now) - Date.parse(this.log.startedAt);
         this.log.status = "error";
         this.log.error = error;
+        this.flush();
+    }
+
+    logData(key: string, value: unknown): void {
+        this.log.data ??= {};
+        this.log.data[key] = value;
         this.flush();
     }
 
