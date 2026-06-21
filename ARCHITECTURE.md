@@ -21,7 +21,7 @@ and LinkedIn input, GitHub API data retrieval, and Gemini as the initial AI prov
 | PDF extraction      | unpdf                             |
 | GitHub data         | @octokit/graphql                  |
 | Agent orchestration | @mastra/core                      |
-| AI provider (PoC)   | @ai-sdk/google (Gemini 2.5 Flash) |
+| AI provider (PoC)   | NVIDIA NIM via @ai-sdk/openai (OpenAI-compatible) |
 | Schema validation   | zod                               |
 | Environment config  | dotenv                            |
 | Testing             | vitest + @vitest/coverage-v8      |
@@ -35,6 +35,8 @@ ascentxai/
 ├── src/
 │   ├── cli/
 │   │   └── index.ts                  # Entry point, argument parsing, interactive fallback (planned)
+│   ├── llm/
+│   │   └── provider.ts               # NVIDIA NIM model factory (OpenAI-compatible)
 │   ├── logger.ts                     # Structured run logger (JSON to disk)
 │   ├── mastra.ts                     # Central Mastra instance (agent registry)
 │   ├── modules/
@@ -96,7 +98,7 @@ ascentxai/
 │           ├── career-analyzer.test.ts
 │           ├── prompt-builder.test.ts
 │           └── tools.test.ts
-├── .env                                  # GOOGLE_GENERATIVE_AI_API_KEY, GITHUB_TOKEN
+├── .env                                  # NIM_API_KEY, GITHUB_TOKEN
 ├── package.json
 ├── tsconfig.json
 └── vitest.config.ts
@@ -117,6 +119,7 @@ ascentxai/
 | `github/github-mapper.ts`            | ✅ Complete |
 | `types/github/github.ts`             | ✅ Complete |
 | `types/github/github-response.ts`    | ✅ Complete |
+| `llm/provider.ts`                    | ✅ Complete |
 | `linkedin/extraction-agent.ts`       | ✅ Complete |
 | `linkedin/profile-extractor.ts`      | ✅ Complete |
 | `types/linkedin/linkedin-profile.ts` | ✅ Complete |
@@ -130,7 +133,7 @@ ascentxai/
 | `analyzer/tools.ts`                  | ✅ Complete |
 | `analyzer/prompt-builder.ts`         | ✅ Complete |
 | `analyzer/career-analyzer.ts`        | ✅ Complete |
-| `output/formatter.ts`                | ⬜ Planned  |
+| `output/formatter.ts`                | ✅ Complete  |
 | `cli/index.ts`                       | ⬜ Planned  |
 
 ---
@@ -335,7 +338,7 @@ from resume extraction:
 2. **Recommendations** — verbatim text, never paraphrased.
 3. **Connection count** — normalized from "500+" to the numeric floor `500`.
 
-**Model:** `gemini-2.5-flash` (configurable via `GOOGLE_GENERATIVE_AI_MODEL`)
+**Model:** `meta/llama-3.1-8b-instruct` (configurable via `EXTRACTION_MODEL`)
 **Temperature:** `0`
 
 ---
@@ -359,7 +362,7 @@ async function extractLinkedInProfile(
 2. Calls `parsePdfFromPath` or `parsePdfFromBuffer` from the shared candidate
    pdf-parser — the LinkedIn export is a standard PDF, so no separate parser
    is needed.
-3. Validates `GOOGLE_GENERATIVE_AI_API_KEY` is set.
+3. Validates `NIM_API_KEY` is set.
 4. Invokes `linkedinExtractionAgent.generate()` with the PDF text and today's
    date injected for duration calculations.
 5. Validates the agent output against `linkedinProfileSchema` (Zod).
@@ -405,8 +408,9 @@ the agent (`openai(...)`, `anthropic(...)`, etc.) — no factory needed.
 
 **Environment variables:**
 
-- `GOOGLE_GENERATIVE_AI_API_KEY` (required, read by `@ai-sdk/google`)
-- `GOOGLE_GENERATIVE_AI_MODEL` (optional, defaults to `gemini-2.5-flash`)
+- `NIM_API_KEY` (required, read by `@ai-sdk/openai` via NVIDIA NIM)
+- `EXTRACTION_MODEL` (optional, defaults to `meta/llama-3.1-8b-instruct`)
+- `ANALYSIS_MODEL` (optional, defaults to `nvidia/llama-3.3-nemotron-super-49b-v1`; falls back to `EXTRACTION_MODEL`)
 
 ---
 
@@ -428,9 +432,9 @@ async function extractCandidateProfile(input: {
 
 1. Accepts either a file path or a raw buffer.
 2. Calls `parsePdfFromPath` or `parsePdfFromBuffer` to get raw text.
-3. Validates `GOOGLE_GENERATIVE_AI_API_KEY` is set.
+3. Validates `NIM_API_KEY` is set.
 4. Invokes `candidateExtractionAgent.generate()` with the resume text and
-   today's date for duration calculations.
+    today's date for duration calculations.
 5. Validates the agent output against `candidateProfileSchema` (Zod).
 6. Returns the typed `CandidateProfile`.
 
@@ -512,7 +516,7 @@ async function analyze(
 
 ---
 
-### `src/output/formatter.ts` _(planned)_
+### `src/output/formatter.ts`
 
 **Responsibility:** Renders the AI analysis string to the terminal with clear
 section structure.
@@ -520,13 +524,14 @@ section structure.
 **Exports:**
 
 ```typescript
-function render(analysis: string): void;
+function render(analysis: string, options?: { runId?: string }): void;
 ```
 
 **Behavior:**
 
 - Prints a header block identifying the tool and run timestamp.
-- Prints the analysis content with section separators for readability.
+- Optionally includes a run ID when provided.
+- Prints the analysis content as-is between top and bottom borders.
 - Writes directly to `process.stdout`.
 - No transformation of analysis content — output is rendered as received.
 
@@ -569,7 +574,7 @@ unpdf (pdf-parser.ts)   --> raw text string
    |
    v
 Mastra Agent (candidateExtractionAgent | linkedinExtractionAgent)
-   - model: @ai-sdk/google -> gemini-2.5-flash
+   - model: @ai-sdk/openai -> meta/llama-3.1-8b-instruct (NVIDIA NIM)
    - temperature: 0
    - generateObject({ schema: candidateProfileSchema | linkedinProfileSchema })
    |
@@ -586,6 +591,7 @@ CandidateProfile | LinkedInProfile (structured JSON)
 | -------------------------------------------- | --------------------------------------------- |
 | `src/types/candidate/profile.ts`             | Zod schema + inferred `CandidateProfile`      |
 | `src/types/linkedin/linkedin-profile.ts`     | Zod schema + inferred `LinkedInProfile`       |
+| `src/llm/provider.ts`                        | NVIDIA NIM model factory (OpenAI-compatible)  |
 | `src/modules/candidate/pdf-parser.ts`        | Shared PDF → text adapter (path or buffer)    |
 | `src/modules/candidate/extraction-agent.ts`  | Mastra agent for resume extraction            |
 | `src/modules/linkedin/extraction-agent.ts`   | Mastra agent for LinkedIn PDF extraction      |
@@ -604,14 +610,15 @@ CandidateProfile | LinkedInProfile (structured JSON)
 All secrets and configuration are stored in `.env` at the project root.
 
 ```
-GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key
-GOOGLE_GENERATIVE_AI_MODEL=gemini-2.5-flash    # optional, this is the default
+NIM_API_KEY=your_nvidia_nim_api_key
+EXTRACTION_MODEL=meta/llama-3.1-8b-instruct    # optional, this is the default
+ANALYSIS_MODEL=nvidia/llama-3.3-nemotron-super-49b-v1     # optional
 GITHUB_TOKEN=your_github_personal_access_token
 JOB_INPUT=                                           # optional, fallback for --job flag
 ```
 
-`GOOGLE_GENERATIVE_AI_API_KEY` is read by `@ai-sdk/google` inside all four
-Mastra-driven pipelines. `GITHUB_TOKEN` authenticates the GraphQL client in
+`NIM_API_KEY` is read by `@ai-sdk/openai` and forwarded to the NVIDIA NIM
+endpoint. `GITHUB_TOKEN` authenticates the GraphQL client in
 `src/modules/github/github-client.ts`. `JOB_INPUT` is an optional fallback
 used by `scripts/analyze.ts` when the `--job` flag is not provided on the CLI.
 
@@ -671,11 +678,11 @@ message to `stderr`, and exits with a non-zero code.
 | `pdf-parser`                 | `File not found: ./missing.pdf`                                       |
 | `github-client`              | `GitHub user "johndoe" not found`                                     |
 | `github-client`              | `GitHub API error: ...`                                               |
-| `profile-extractor`          | `GOOGLE_GENERATIVE_AI_API_KEY is not set. Add it to your .env file.`  |
+| `profile-extractor`          | `NIM_API_KEY is not set. Add it to your .env file.`  |
 | `profile-extractor`          | Zod validation error when the agent returns a malformed profile       |
 | `linkedin/profile-extractor` | Same API key and Zod errors as candidate extractor                    |
 | `job/job-extractor`          | `Failed to fetch job posting at <url>: HTTP 404`                      |
-| `job/job-extractor`          | Same `GOOGLE_GENERATIVE_AI_API_KEY` and Zod errors as other pipelines |
+| `job/job-extractor`          | Same `NIM_API_KEY` and Zod errors as other pipelines |
 | `career-analyzer`            | `Career analysis agent returned an empty response.`                   |
 
 ---

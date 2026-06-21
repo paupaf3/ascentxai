@@ -44,11 +44,11 @@ excerpt.
 ## extract-resume.ts
 
 Manually tests the resume extraction pipeline (PDF -> Mastra agent ->
-validated `CandidateProfile`) against the real Gemini API.
+validated `CandidateProfile`) against the real NVIDIA NIM API.
 
 ### Prerequisites
 
-Set `GOOGLE_GENERATIVE_AI_API_KEY` in `.env` at the project root. The script
+Set `NIM_API_KEY` in `.env` at the project root. The script
 loads it automatically via `dotenv/config`.
 
 ### Command

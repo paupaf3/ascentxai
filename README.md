@@ -43,7 +43,7 @@ Each data source has its own module. They all follow the same pattern:
 ```
 Input (PDF / URL / text)
   → raw extraction (unpdf / HTTP fetch)
-  → Mastra agent (Gemini, temperature 0)
+   → Mastra agent (NVIDIA NIM, temperature 0)
   → Zod validation
   → typed domain object
 ```
@@ -106,7 +106,7 @@ git clone <repo>
 cd ascentxai
 npm install
 cp .env.sample .env
-# Fill in GOOGLE_GENERATIVE_AI_API_KEY and GITHUB_TOKEN
+# Fill in NIM_API_KEY and GITHUB_TOKEN
 ```
 
 ### Goal mode (existing profile → target role):
@@ -143,7 +143,7 @@ npm run github:test repo <owner/repo>
 | Library                                                                           | Role                 | Why this one?                                                                                                                                          |
 | --------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [**Mastra**](https://mastra.dev) (`@mastra/core`)                                 | AI agent framework   | Lighter than LangChain. Handles agent lifecycle, tool binding, structured output, and observability out of the box.                                    |
-| [**Vercel AI SDK**](https://sdk.vercel.ai) (`@ai-sdk/google`)                     | Model binding        | Provider-agnostic abstraction. Swap Gemini → OpenAI by changing one import. Model name configurable via `GOOGLE_GENERATIVE_AI_MODEL` env var.          |
+| [**Vercel AI SDK**](https://sdk.vercel.ai) (`@ai-sdk/openai`)                     | Model binding        | Provider-agnostic abstraction. Points at NVIDIA NIM (OpenAI-compatible endpoint). Model configurable via `EXTRACTION_MODEL` / `ANALYSIS_MODEL` env vars.          |
 | [**Zod**](https://zod.dev)                                                        | Runtime validation   | Every external boundary (GitHub API, AI agent output, tool I/O) is validated at runtime. Prevents `undefined` propagation and catches API drift early. |
 | [**Octokit GraphQL**](https://github.com/octokit/graphql.js) (`@octokit/graphql`) | GitHub API client    | Official GitHub SDK. GraphQL lets us fetch profile + pinned repos + READMEs in a single round-trip.                                                    |
 | [**unpdf**](https://github.com/ycjcl868/unpdf)                                    | PDF text extraction  | Zero-dependency PDF parser. Chosen over `pdf-parse` (native build issues) and `pdfjs-dist` (heavy).                                                    |
@@ -245,7 +245,7 @@ All four extraction modules follow the same pattern. The **candidate module** is
 **`extraction-agent.ts`** — Mastra agent definition:
 
 - Temperature 0 for deterministic output
-- Model configurable via `GOOGLE_GENERATIVE_AI_MODEL`
+- Model configurable via `EXTRACTION_MODEL` env var
 - Instructions tuned for: canonical skill naming ("TypeScript" not "TS"), per-role tech lists, non-overlapping experience calculation, null policy
 - Agent returns structured output matching the Zod schema
 
@@ -357,13 +357,14 @@ npm run test:coverage # With coverage report
 tests/
 ├── modules/
 │   ├── candidate/     # pdf-parser (6), profile-extractor (4), profile-schema (6)
-│   ├── github/        # github-client (15)
+│   ├── github/        # github-client (17)
 │   ├── linkedin/      # profile-extractor (5)
-│   └── analyzer/      # career-analyzer (8), prompt-builder (16), tools (6)
+│   ├── job/           # job-extractor (10), matcher (19)
+│   └── analyzer/      # career-analyzer (9), prompt-builder (18), prompt-builder-job-mode (25), tools (6), logger (12), agent-contract (17), schema-boundary (28)
 └── fixtures/          # Shared test data
 ```
 
-~66 test cases across 8 test files. Notable gaps: `matcher.ts`, `job-extractor.ts`, `logger.ts` have zero tests.
+**182 test cases across 14 test files.**
 
 ### Mocking pattern
 
@@ -394,12 +395,12 @@ See [ROADMAP.md](ROADMAP.md) for the full phase plan.
 | 0     | Project scaffolding                    | ✅ Complete    |
 | 1     | PDF parser                             | ✅ Complete    |
 | 2     | GitHub client                          | ✅ Complete    |
-| 3     | Candidate extraction (Mastra + Gemini) | ✅ Complete    |
+| 3     | Candidate extraction (Mastra + NVIDIA NIM) | ✅ Complete    |
 | 3b    | LinkedIn extraction                    | ✅ Complete    |
 | 4     | Prompt builder                         | ✅ Complete    |
 | 5     | Career analyzer orchestrator + tools   | ✅ Complete    |
 | 5b    | Job description analysis + matching    | ✅ Complete    |
-| 6     | Output formatter                       | ⬜ Not started |
+| 6     | Output formatter                       | ✅ Complete    |
 | 7     | CLI entry point (commander)            | ⬜ Not started |
 | 8     | End-to-end validation                  | ⬜ Not started |
 | 9     | LlamaParse for structured PDF parsing  | 📋 Post-PoC    |
@@ -412,9 +413,10 @@ See [ROADMAP.md](ROADMAP.md) for the full phase plan.
 
 | Variable                       | Required | Description                                                 |
 | ------------------------------ | -------- | ----------------------------------------------------------- |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | Yes      | Gemini API key for all AI extraction and analysis           |
+| `NIM_API_KEY`                  | Yes      | NVIDIA NIM API key for all AI extraction and analysis       |
 | `GITHUB_TOKEN`                 | Yes      | GitHub personal access token (read-only scope)              |
-| `GOOGLE_GENERATIVE_AI_MODEL`   | No       | Model name override (default: `gemini-2.5-flash`)           |
+| `EXTRACTION_MODEL`             | No       | Extraction model override (default: `meta/llama-3.1-8b-instruct`) |
+| `ANALYSIS_MODEL`               | No       | Analysis model override (default: `nvidia/llama-3.3-nemotron-super-49b-v1`) |
 | `JOB_INPUT`                    | No       | Fallback job input when `--job` flag is not provided on CLI |
 
 ---
@@ -427,7 +429,7 @@ This section explains how the four core technologies work together, with real co
 
 ### Zod — Runtime Validation at Every Boundary
 
-Zod is the **foundation** of the project. Every piece of data from an external source (Gemini, GitHub API, user input) is validated at runtime with a Zod schema.
+Zod is the **foundation** of the project. Every piece of data from an external source (AI model, GitHub API, user input) is validated at runtime with a Zod schema.
 
 #### Schema → Type Inference
 
@@ -459,7 +461,7 @@ const YEAR_OR_MONTH = z
     );
 ```
 
-If Gemini returns `"2025-13"` (invalid month) or `"next year"`, Zod catches it at runtime with a clear error message.
+If the model returns `"2025-13"` (invalid month) or `"next year"`, Zod catches it at runtime with a clear error message.
 
 #### The Double-Validation Pattern (defense in depth)
 
@@ -503,31 +505,35 @@ The same pattern repeats across all modules:
 
 ---
 
-### Vercel AI SDK (`@ai-sdk/google`) — Model Binding
+### Vercel AI SDK (`@ai-sdk/openai`) — Model Binding
 
-The Vercel AI SDK provides a **provider-agnostic** interface to language models. This project uses the Google provider, but switching to OpenAI, Anthropic, or Azure requires changing only the import and model string.
+The Vercel AI SDK provides a **provider-agnostic** interface to language models. This project uses `@ai-sdk/openai` pointed at NVIDIA NIM's OpenAI-compatible endpoint, but switching to OpenAI, Anthropic, or Azure requires changing only the import, base URL, and model string.
 
 #### How the Model Is Created
 
 ```typescript
-// src/modules/candidate/extraction-agent.ts
-import { google } from "@ai-sdk/google";
+// src/llm/provider.ts
+import { createOpenAI } from "@ai-sdk/openai";
 
-const model = google("gemini-2.5-flash", { temperature: 0 });
+const nim = createOpenAI({
+    baseURL: "https://integrate.api.nvidia.com/v1",
+    apiKey: process.env.NIM_API_KEY,
+    compatibility: "compatible",
+});
 ```
 
-The `google()` function returns a `LanguageModel` instance. Every provider (`@ai-sdk/openai`, `@ai-sdk/anthropic`, etc.) exports a function with the same interface.
+The `createOpenAI()` function returns an OpenAI-compatible client. Every provider (`@ai-sdk/google`, `@ai-sdk/anthropic`, etc.) exports a function with the same interface.
 
 #### Provider Agnosticism in Practice
 
-To switch from Gemini to GPT-4o, the change is:
+To switch from NVIDIA NIM to GPT-4o, the change is:
 
 ```diff
-- import { google } from "@ai-sdk/google";
+- const nim = createOpenAI({ baseURL: "https://integrate.api.nvidia.com/v1", ... });
 + import { openai } from "@ai-sdk/openai";
 
-- model: google("gemini-2.5-flash", { temperature: 0 }),
-+ model: openai("gpt-4o", { temperature: 0 }),
+- return nim(modelName, options);
++ return openai("gpt-4o", options);
 ```
 
 Everything else — Mastra agent, tools, structured output — stays unchanged because they all consume the `LanguageModel` interface.
@@ -537,12 +543,12 @@ Everything else — Mastra agent, tools, structured output — stays unchanged b
 All four agents follow this pattern:
 
 ```typescript
-const DEFAULT_EXTRACTION_MODEL = "gemini-2.5-flash";
+const DEFAULT_EXTRACTION_MODEL = "meta/llama-3.1-8b-instruct";
 const extractionModel =
-    process.env.GOOGLE_GENERATIVE_AI_MODEL?.trim() || DEFAULT_EXTRACTION_MODEL;
+    process.env.EXTRACTION_MODEL?.trim() || DEFAULT_EXTRACTION_MODEL;
 ```
 
-Set `GOOGLE_GENERATIVE_AI_MODEL=gemini-2.5-pro` in `.env` and every agent switches without code changes.
+Set `EXTRACTION_MODEL=meta/llama-3.1-70b` in `.env` and every extraction agent switches without code changes.
 
 #### Temperature 0
 
@@ -568,7 +574,7 @@ export const candidateExtractionAgent = new Agent({
         '- Normalize technology names: "JavaScript" (not "JS"), "TypeScript" (not "TS").',
         // ...
     ].join("\n"),
-    model: google(extractionModel, { temperature: 0 }),
+    model: getModel(extractionModel, { temperature: 0 }),
 });
 ```
 
@@ -596,7 +602,7 @@ const result = await agent.generate(
 Mastra does three things when you pass `{ output: schema }`:
 
 1. **Converts the Zod schema to JSON Schema** — understands `z.string()`, `z.array()`, `z.nullable()`, `.max(5)`, etc.
-2. **Tells the model to respond in this exact JSON shape** — Gemini returns structured data, not free text
+2. **Tells the model to respond in this exact JSON shape** — the model returns structured data, not free text
 3. **Validates the response** against the schema and surfaces errors immediately
 
 Without Mastra, you'd need to:
@@ -683,7 +689,7 @@ Let's trace one extraction end-to-end to see the layering:
                     Zod                        Vercel AI SDK
                      │                             │
                      ▼                             ▼
-  profile-extractor.ts ──► extraction-agent.ts ──► google("gemini-2.5-flash")
+  profile-extractor.ts ──► extraction-agent.ts ──► getModel("meta/llama-3.1-8b-instruct")
        │                       │                        │
        │  "output: schema"     │ instructions            │ returns JSON matching schema
        └───────────────────────┴────────────────────────┘
@@ -700,8 +706,8 @@ Let's trace one extraction end-to-end to see the layering:
 2. **extractor** validates API key, reads PDF text via `unpdf`
 3. **extractor** calls `agent.generate(userMessage, { output: candidateProfileSchema })`
 4. **Mastra** converts the Zod schema to JSON Schema, appends it to the system instructions
-5. **Mastra** sends the full prompt to Gemini via **Vercel AI SDK's `google()` model**
-6. **Gemini** returns structured JSON matching the requested schema
+5. **Mastra** sends the full prompt to the model via **Vercel AI SDK's `getModel()` provider**
+6. **NVIDIA NIM** returns structured JSON matching the requested schema
 7. **Mastra** validates the response against the schema, returns `result.object`
 8. **extractor** calls `candidateProfileSchema.parse(result.object)` — second validation
 9. Returns a fully typed `CandidateProfile` to the caller
@@ -717,4 +723,4 @@ Each layer has one job:
 
 ---
 
-_Built with TypeScript, Mastra, Gemini, and Zod._
+_Built with TypeScript, Mastra, NVIDIA NIM, and Zod._

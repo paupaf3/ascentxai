@@ -97,12 +97,9 @@ non-empty string of readable text from any standard PDF resume.
 **Status: ✅ Complete** _(replaces the originally planned hand-rolled AI Provider Abstraction)_
 
 **Goal:** A structured, validated JSON profile extracted from a resume PDF using
-a Mastra agent and Gemini 2.5 Flash. This phase superseded the planned
+a Mastra agent with NVIDIA NIM. This phase superseded the planned
 `AIProvider` interface + `GeminiProvider` class in favor of Mastra + Vercel AI SDK,
 which provide provider swapping, structured output, and observability out of the box.
-
-> **Note:** The files `src/modules/ai/ai-provider.ts`, `src/modules/ai/gemini-provider.ts`,
-> and `src/modules/ai/provider-factory.ts` remain as empty stubs and can be removed.
 
 **Modules:**
 
@@ -120,7 +117,7 @@ which provide provider swapping, structured output, and observability out of the
     - Nullable fields for missing data; date format validation (YYYY, YYYY-MM, "present")
     - `topSkills: string[]` capped at 5
 - [x] Implement `candidateExtractionAgent` (Mastra agent bound to `gemini-2.5-flash`)
-    - Model configurable via `GOOGLE_GENERATIVE_AI_MODEL` env var
+    - Model configurable via `EXTRACTION_MODEL` env var
     - Instructions for HR data extraction, canonical naming, null policy
 - [x] Implement `extractCandidateProfile(input)` service in `profile-extractor.ts`
     - Accepts file path or buffer
@@ -291,7 +288,7 @@ targeted analysis with blind spots, quick wins, and a roadmap.
 
 ## Phase 6 — Output Formatter
 
-**Status: ⬜ Not started**
+**Status: ✅ Complete**
 
 **Goal:** A clean terminal rendering of the analysis with a consistent layout.
 
@@ -299,12 +296,13 @@ targeted analysis with blind spots, quick wins, and a roadmap.
 
 **Tasks:**
 
-- [ ] Implement `render(analysis: string): void`
+- [x] Implement `render(analysis: string): void`
     - Print a top border and tool header with run timestamp
     - Print the analysis content as-is
     - Print a bottom border
-- [ ] Write directly to `process.stdout`
-- [ ] No transformation of content — render what the AI returns
+- [x] Write directly to `process.stdout`
+- [x] Optional `runId` metadata in header
+- [x] Unit tests: 5 tests covering header, content, run ID, border, stdout
 
 **Completion criteria:** `render(analysisString)` prints a clearly structured,
 readable block to the terminal with header and timestamp.
@@ -367,7 +365,7 @@ is considered complete.
 - [ ] Verify error handling for each known failure case:
     - Invalid PDF path
     - Non-existent GitHub username
-    - Missing `GOOGLE_GENERATIVE_AI_API_KEY`
+    - Missing `NIM_API_KEY`
     - Missing `GITHUB_TOKEN`
 - [ ] Review prompt output quality — adjust `prompt-builder.ts` if sections
       are missing or poorly structured
@@ -390,7 +388,7 @@ messages with a non-zero exit code.
 | 4     | `analyzer/prompt-builder.ts`                           | ✅ Complete    | Structured prompt assembly (3–4 sources) |
 | 5     | `analyzer/career-analyzer.ts` + `analyzer/tools.ts`    | ✅ Complete    | End-to-end orchestrator + agent tools    |
 | 5b    | `job/` module + `AnalysisTarget`                       | ✅ Complete    | Job description analysis mode + matching |
-| 6     | `output/formatter.ts`                                  | ⬜ Not started | Terminal output renderer                 |
+| 6     | `output/formatter.ts`                                  | ✅ Complete    | Terminal output renderer                 |
 | 7     | `cli/index.ts`                                         | ⬜ Not started | Fully wired CLI with fallback input      |
 | 8     | Full pipeline                                          | ⬜ Not started | Validated PoC on real data               |
 
