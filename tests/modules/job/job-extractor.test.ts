@@ -147,7 +147,7 @@ describe("extractJobDescription", () => {
 
         await extractJobDescription("https://example.com/job");
 
-        const messages = generateMock.mock.calls[0][0];
+        const messages = generateMock.mock.calls[0]![0];
         expect(messages[0].content).toContain("Hello World Test");
     });
 
@@ -169,7 +169,7 @@ describe("extractJobDescription", () => {
 
         await extractJobDescription("Senior TypeScript developer needed");
 
-        const messages = generateMock.mock.calls[0][0];
+        const messages = generateMock.mock.calls[0]![0];
         expect(messages[0].content).toContain("---BEGIN JOB POSTING---");
         expect(messages[0].content).toContain("---END JOB POSTING---");
     });

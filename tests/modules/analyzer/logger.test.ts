@@ -29,7 +29,19 @@ vi.mock("node:crypto", () => ({
 }));
 
 import { RunLogger } from "../../../src/logger";
+import type { StageLog } from "../../../src/logger";
 import type { AnalysisTarget } from "../../../src/types/analysis-target";
+
+interface LogShape {
+    runId: string;
+    status: string;
+    inputs: { resumePath: string; githubUsername: string; target: AnalysisTarget; linkedinPath?: string };
+    stages: StageLog[];
+    durationMs?: number;
+    finishedAt?: string;
+    outputLength?: number;
+    error?: string;
+}
 
 const TARGET: AnalysisTarget = { mode: "goal", goal: "Staff Engineer" };
 
@@ -37,7 +49,7 @@ beforeEach(() => {
     fsCalls.length = 0;
 });
 
-function lastWrite(): Record<string, unknown> {
+function lastWrite(): LogShape {
     const calls = fsCalls.filter((c) => "writeFileSync" in c);
     const last = calls[calls.length - 1];
     return JSON.parse(
@@ -106,8 +118,8 @@ describe("RunLogger", () => {
 
         const log = lastWrite();
         expect(log.stages).toHaveLength(1);
-        expect(log.stages[0].name).toBe("resume_extraction");
-        expect(log.stages[0].status).toBe("running");
+        expect(log.stages[0]!.name).toBe("resume_extraction");
+        expect(log.stages[0]!.status).toBe("running");
     });
 
     it("endStage sets duration and success status", () => {
@@ -127,8 +139,8 @@ describe("RunLogger", () => {
         expect(stage.metadata).toEqual({ extra: "meta" });
 
         const log = lastWrite();
-        expect(log.stages[0].status).toBe("success");
-        expect(log.stages[0].durationMs).toBeGreaterThanOrEqual(0);
+        expect(log.stages[0]!.status).toBe("success");
+        expect(log.stages[0]!.durationMs).toBeGreaterThanOrEqual(0);
     });
 
     it("failStage sets duration and error status", () => {
@@ -147,8 +159,8 @@ describe("RunLogger", () => {
         expect(stage.durationMs).toBeGreaterThanOrEqual(0);
 
         const log = lastWrite();
-        expect(log.stages[0].status).toBe("error");
-        expect(log.stages[0].error).toBe("Something went wrong");
+        expect(log.stages[0]!.status).toBe("error");
+        expect(log.stages[0]!.error).toBe("Something went wrong");
     });
 
     it("finish sets overall success status and output length", () => {
@@ -229,11 +241,11 @@ describe("RunLogger", () => {
 
         const log = lastWrite();
         expect(log.stages).toHaveLength(2);
-        expect(log.stages[0].name).toBe("stage_one");
-        expect(log.stages[0].status).toBe("success");
-        expect(log.stages[1].name).toBe("stage_two");
-        expect(log.stages[1].status).toBe("error");
-        expect(log.stages[1].error).toBe("failed");
+        expect(log.stages[0]!.name).toBe("stage_one");
+        expect(log.stages[0]!.status).toBe("success");
+        expect(log.stages[1]!.name).toBe("stage_two");
+        expect(log.stages[1]!.status).toBe("error");
+        expect(log.stages[1]!.error).toBe("failed");
     });
 
     it("flushes (writes) on every state change", () => {
@@ -253,7 +265,7 @@ describe("RunLogger", () => {
         ).length;
         expect(writesAfterStart).toBe(1);
 
-        logger.endStage(logger["log"].stages[0]);
+        logger.endStage(logger["log"].stages[0]!);
         const writesAfterEnd = fsCalls.filter(
             (c) => "writeFileSync" in c
         ).length;
