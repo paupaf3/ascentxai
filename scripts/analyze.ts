@@ -1,6 +1,7 @@
 import "dotenv/config";
 import path from "node:path";
 
+import { render } from "../src/output/formatter";
 import {
     analyze,
     type AnalysisTarget,
@@ -103,7 +104,7 @@ async function main(): Promise<void> {
         linkedinPath
     );
 
-    console.log(analysis);
+    render(analysis);
 }
 
 main().catch((error: unknown) => {
